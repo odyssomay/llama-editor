@@ -66,7 +66,7 @@
 
     (.setEditable err_text false)
     (.setEditable out_text false)
-    {:content tabbed_pane :title (:name project)}))
+    {:content (:content document) :title (:name project)}))
 
 (let [tabbed_pane (tabbed-pane :tab_placement "right")]
   (def selected-index 
