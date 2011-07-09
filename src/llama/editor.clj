@@ -26,7 +26,7 @@
   (def current-text
     (>>> current-pane #(.getText %)))
 
-  ;; argument is a map with :title :path :content
+  ;; argument is a map with :title :path
   (def open-file
     (>>> clone
          (||| #(find-i (:path %) (map :path @docs))
