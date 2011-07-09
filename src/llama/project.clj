@@ -2,10 +2,12 @@
   (:use clj-arrow.arrow
         (Hafni.swing 
           [component :only [component input-arr]]
-          [tree :only [tree]])
+          [tree :only [tree]]
+          [view :only [icon]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
-            (llama [repl :as repl])
+            (llama [editor :as editor]
+                   [repl :as repl])
             (seesaw [core :as ssw]
                     [chooser :as ssw-chooser])
             (leiningen [core :as lein-core]
@@ -14,10 +16,36 @@
                        [new :as lein-new])
             (Hafni.swing [dialog :as dialog])))
 
-
-(def *project-tree* (tree))
 (def *current-project* (atom nil))
 (def *current-project-thread* (atom nil))
+
+(def *project-tree* 
+  (let [t (tree)
+        tc (component t)]
+    (ssw/config! tc :popup (fn [e] 
+                             (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
+                               (let [path (->> raw_path
+                                            .getPath
+                                            (map :root))]
+                                 (if (.endsWith (last path) ".clj")
+                                   [(ssw/action :name "open file" 
+                                                :handler (fn [_]
+                                                           (editor/open-file {:path (.getCanonicalPath 
+                                                                                      (apply file 
+                                                                                             (cons (:target-dir @*current-project*) (rest path))))
+                                                                              :title (last path)
+                                                                              })))]
+                                   [(ssw/menu-item :text "non clojure file")])))))
+    (.setCellRenderer
+      tc (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
+          (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
+            (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
+              (when (and (.toString value) (.endsWith (.toString value) ".clj"))
+                    (.setIcon c (component (icon :path (.getPath (file "icons" "clj.gif")))))
+                ;    (ssw/config! c :popup (fn [_] [(ssw/menu-item :text "clojure file")]))
+                )
+              c))))
+    t))
 
 (defn current-project [& _]
   @*current-project*)
@@ -46,15 +74,15 @@
           (llama-new/new-project (.getName %) (.getPath %)))))
 
 (def load-project-from-file
-  (>>> (fn [& _] 
-         (dialog/open-file))
-       #(if %
-          (swap! *current-project* 
-               (constantly (lein-core/read-project (:path %)))))
-       (>>>
-         current-project
-         create-project-file-tree
-         (input-arr *project-tree* :content))))
+  (>>> (constantly [nil nil])
+       (||| (fn [& _] 
+              (dialog/open-file))
+            (>>> first
+                 #(swap! *current-project* 
+                         (constantly (lein-core/read-project (:path %))))
+                 current-project
+                 create-project-file-tree
+                 (input-arr *project-tree* :content)))))
 
 (defn run-current-project [& _]
   (if @(current-project)
