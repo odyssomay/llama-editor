@@ -91,6 +91,9 @@ Exponent = [eE] [+-]? [0-9]+
 StringCharacter = [^\r\n\"\\]
 SingleCharacter = [^\r\n\'\\]
 
+/* keywords */
+Keyword = :[:jletter:]+
+
 %state STRING, CHARLITERAL
 
 %%
@@ -455,6 +458,9 @@ SingleCharacter = [^\r\n\'\\]
 
   /* whitespace */
   {WhiteSpace}                   { }
+
+  /* keyword */
+  {Keyword}			 { return token(TokenType.TYPE); }
 
   /* identifiers */ 
   {Identifier}                   { return token(TokenType.IDENTIFIER); }
