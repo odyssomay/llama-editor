@@ -1,14 +1,13 @@
 (ns llama.editor
     (:use clj-arrow.arrow
-          (llama document lib)
-          (Hafni utils)
-          (Hafni.swing component container))
+          (llama document lib))
     (:require [clojure.set :as cset] 
               [Hafni.swing.dialog :as file]
-              ))
+              [seesaw.core :as ssw]
+              [hafni-seesaw.core :as hssw]))
 
-(let [tp (tabbed-pane :layout "scroll")
-      tabbed_pane (component tp)
+(let [tp (ssw/tabbed-panel :overflow :scroll)
+      tabbed_pane tp
       docs (atom [])]
 
   (def selected-index
@@ -21,7 +20,8 @@
     (>>> selected-index #(:content (nth @docs %))))
 
   (def current-pane
-    (>>> current-component component))
+    current-component)
+;    (>>> current-component component))
 
   (def current-text
     (>>> current-pane #(.getText %)))
@@ -31,17 +31,17 @@
     (>>> clone
          (||| #(find-i (:path %) (map :path @docs))
               (>>> first #(.setSelectedIndex tabbed_pane %))
-              (snd (>>> create-doc #(swap! docs conj %) (input-arr tp :content))))))
+              (snd (>>> create-doc #(swap! docs conj %) (hssw/input-arr tp :content))))))
 
   ;; argument is ignored
   (def open-and-choose-file
-    (>>> (const [nil nil])
+    (>>> (constantly [nil nil])
          (||| (ignore file/open-file)
               (>>> first #(cset/rename-keys % {:name :title}) open-file))))
 
   ;; argument is ignored
   (def new-file 
-    (>>> (const {:title "Untitled" :path nil})
+    (>>> (constantly {:title "Untitled" :path nil})
          open-file))
 
   ;; argument is a pair where the first value is the path
@@ -51,14 +51,14 @@
 
   ;; argument is ignored
   (def save-as
-    (>>> (const [nil nil])
+    (>>> (constantly [nil nil])
          (||| (ignore #(:path (file/save-file)))
               (&&& save-file
                    (>>> (snd selected-index)
                         (fn [[path index]] 
                           (swap! docs (fn [coll] 
                                         (change-i index #(assoc % :title path) coll))))
-                        (input-arr tp :content))))))
+                        (hssw/input-arr tp :content))))))
 
   ;; argument is ignored
   (def save
@@ -80,7 +80,7 @@
 
   ;;argument is ignored
   (def remove-current-tab
-    (>>> selected-index (fn [n] (swap! docs #(drop-n % n))) (input-arr tp :content)))
+    (>>> selected-index (fn [n] (swap! docs #(drop-n % n))) (hssw/input-arr tp :content)))
 
   (def editor-pane 
     tabbed_pane))
