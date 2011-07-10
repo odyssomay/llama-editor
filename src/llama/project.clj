@@ -78,7 +78,7 @@
           (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
             (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
               (when (and (.toString value) (.endsWith (.toString value) ".clj"))
-                    (.setIcon c (component (icon :path (.getPath (file "icons" "clj.gif"))))))
+                    (.setIcon c (component (ssw/icon (ClassLoader/getSystemResource "clj.gif")))))
               c))))
     tc))
 
