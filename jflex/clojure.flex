@@ -94,6 +94,9 @@ SingleCharacter = [^\r\n\'\\]
 /* keywords */
 Keyword = :[:jletter:]+
 
+//String = \"([:jletter:]|[ \r\n])*\"
+String = \"([^\"]|\\\")*\"
+
 %state STRING, CHARLITERAL
 
 %%
@@ -425,11 +428,14 @@ Keyword = :[:jletter:]+
   "]"                            { return token(TokenType.OPERATOR, -BRACKET); }
   
   /* string literal */
-  \"                             {  
+/*  \"                             {  
                                     yybegin(STRING); 
                                     tokenStart = yychar; 
                                     tokenLength = 1; 
                                  }
+*/
+
+  {String}       		 { return token(TokenType.STRING); }
 
   /* character literal */
   \'                             {  
@@ -480,8 +486,8 @@ Keyword = :[:jletter:]+
   
   /* escape sequences */
 
-  \\.                            { tokenLength += 2; }
-  {LineTerminator}               { yybegin(YYINITIAL);  }
+//  \\.                            { tokenLength += 2; }
+//  {LineTerminator}               { yybegin(YYINITIAL);  }
 }
 
 <CHARLITERAL> {
