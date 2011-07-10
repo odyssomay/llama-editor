@@ -4,6 +4,7 @@
           [highlight :only [clj-highlight]])
         (Hafni.swing
           [utils :only [*available-fonts* color font]])
+        [seesaw.invoke :only [invoke-later]]
         clj-arrow.arrow)
   (:require [hafni-seesaw.core :as hssw]
             [seesaw.core :as ssw])
@@ -51,24 +52,18 @@
     (.addUndoableEditListener jdoc listener)
     manager))
 
-(defrecord Edit_add [offset text length])
-
-(defrecord Edit_rem [offset text length])
-
 (defn apply-edit [jdoc edit]
   (if (string? (second edit))
       (.insertString jdoc (first edit) (second edit) nil)
       (.remove jdoc (first edit) (second edit))))
 
 (defn create-doc [file]
-  (let [text (if (:path file) (slurp (:path file)) "") ; was file_content
-        ;text (apply str (interpose "\n" file_content))
-;        c (text-pane :text text
-;                     :font (get-font) :styles (get-styles))
-        jtext_pane (javax.swing.JTextPane.) ;(component c)
-        update-highlight (fn [& _] 
-                           (dorun (map (hssw/input-arr jtext_pane :style) 
-                                       (clj-highlight 0 (.getText jtext_pane)))))
+  (let [text (if (:path file) (slurp (:path file)) "")
+        jtext_pane (javax.swing.JTextPane.) 
+        update-highlight (fn [& _]
+                           (invoke-later
+                             (dorun (map (hssw/input-arr jtext_pane :style) 
+                                         (clj-highlight 0 (.getText jtext_pane))))))
         pane (hssw/listen jtext_pane
                               :insert (fn [[index input]]
                                         (if (= input "\n")
