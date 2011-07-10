@@ -1,8 +1,12 @@
 (ns llama.document
-  (:use (llama syntax highlight)
-        clj-arrow.arrow
-        (Hafni utils)
-        (Hafni.swing component text utils view))
+  (:use (llama 
+          [syntax :only [indent]] 
+          [highlight :only [clj-highlight]])
+        (Hafni.swing
+          [utils :only [*available-fonts* color font]])
+        clj-arrow.arrow)
+  (:require [hafni-seesaw.core :as hssw]
+            [seesaw.core :as ssw])
   (:import javax.swing.text.AbstractDocument$DefaultDocumentEvent
            javax.swing.event.DocumentEvent$EventType))
 
@@ -59,22 +63,24 @@
 (defn create-doc [file]
   (let [text (if (:path file) (slurp (:path file)) "") ; was file_content
         ;text (apply str (interpose "\n" file_content))
-        c (text-pane :text text
-                     :font (get-font) :styles (get-styles))
-        jtext_pane (component c)
-        jdoc (.getDocument jtext_pane)
-        update-highlight (ignore #(dorun (map (input-arr c :style) (clj-highlight 0 (.getText jtext_pane)))))
-        manager (init-undoable-edits jdoc)
-        pane (comp-and-events c
+;        c (text-pane :text text
+;                     :font (get-font) :styles (get-styles))
+        jtext_pane (javax.swing.JTextPane.) ;(component c)
+        update-highlight (fn [& _] 
+                           (dorun (map (hssw/input-arr jtext_pane :style) 
+                                       (clj-highlight 0 (.getText jtext_pane)))))
+        pane (hssw/listen jtext_pane
                               :insert (fn [[index input]]
                                         (if (= input "\n")
-                                          (let [text (.getText jdoc 0 index)]
+                                          (let [text (.getText jtext_pane 0 index)]
                                             [index (indent text)])
                                           [index input]))
                               :inserted update-highlight
-                              :removed update-highlight)]
-    (update-highlight nil)
-    (assoc file :content (scroll-pane pane) 
-                :component pane
+                              :removed update-highlight)
+        manager (init-undoable-edits (.getDocument jtext_pane))]
+    (hssw/config! jtext_pane :text text :font (get-font) :styles (get-styles))
+    (update-highlight)
+    (assoc file :content (ssw/scrollable jtext_pane) 
+                :component jtext_pane
                 :manager manager)))
 
