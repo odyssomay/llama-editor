@@ -78,8 +78,9 @@
                               :inserted update-highlight
                               :removed update-highlight)
         manager (init-undoable-edits (.getDocument jtext_pane))]
-    (hssw/config! jtext_pane :text text :font (get-font) :styles (get-styles))
-    (update-highlight)
+    (hssw/config! jtext_pane :font (get-font) :styles (get-styles))
+    (hssw/config! jtext_pane :text text) ; text must be added afterwards, since styles otherwise don't exist
+;    (update-highlight)
     (assoc file :content (ssw/scrollable jtext_pane) 
                 :component jtext_pane
                 :manager manager)))
