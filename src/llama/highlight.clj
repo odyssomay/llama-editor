@@ -1,7 +1,7 @@
 (ns llama.highlight
   (:use (llama lib))
-  (:import (llama ClojureLexer)
-	   (jsyntaxpane Token TokenType)
+  (:import (llama.lexer ClojureLexer)
+;	   (jsyntaxpane Token TokenType)
 	   (java.io StringReader)))
 
 ;; the only code used here is the SCANNER section below, the rest

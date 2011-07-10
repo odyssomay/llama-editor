@@ -58,15 +58,40 @@
       (.insertString jdoc (first edit) (second edit) nil)
       (.remove jdoc (first edit) (second edit))))
 
+(defn in-string? [text]
+  (odd? (count (filter (partial = \") text))))
+
+(comment
+(defn create-highlight-fn [jtext_pane]
+  (let [old_h (atom ())]
+    (fn [& _]
+      (invoke-later
+        (let [t (.getText jtext_pane)
+              pos (.getCaretPosition jtext_pane)
+              terminator (if (in-string? (take (inc pos) t)) \" \newline)
+              start 0
+              end (+ pos 1
+                     (count (take-while (partial not= terminator) (drop pos t))))
+              h (clj-highlight start (.getText jtext_pane start end))
+              new_h (apply concat (map rest (:+ (diff @old_h h))))]
+;          (println "pos = " pos)
+;          (prn "terminator = " terminator)
+;          (println "Text to highlight: " (.getText jtext_pane start end))
+          ;          (println "Highlighting " (count new_h) " tokens")
+          ;          (println "Total tokens is " (count h))
+          (dorun (map (hssw/input-arr jtext_pane :style) h))
+          (swap! old_h (constantly h)))))))
+)
+
 (defn create-highlight-fn [jtext_pane]
   (let [old_h (atom ())]
     (fn [& _]
       (invoke-later
         (let [h (clj-highlight 0 (.getText jtext_pane))
               new_h (apply concat (map rest (:+ (diff @old_h h))))]
-;          (println "Highlighting " (count new_h) " tokens")
-;          (println "Total tokens is " (count h))
-          (dorun (map (hssw/input-arr jtext_pane :style) 
+          (println "Highlighting " (count new_h) " tokens")
+          (println "Total tokens is " (count h))
+          (dorun (map (hssw/input-arr jtext_pane :style)
                       new_h))
           (swap! old_h (constantly h)))))))
 
@@ -84,7 +109,7 @@
                               :removed update-highlight)
         manager (init-undoable-edits (.getDocument jtext_pane))]
     (hssw/config! jtext_pane :font (get-font) :styles (get-styles))
-    (hssw/config! jtext_pane :text text) ; text must be added afterwards, since styles otherwise wont exist
+    (hssw/config! jtext_pane :text text) ; text must be added afterwards, since styles wont exist otherwise
 ;    (update-highlight)
     (assoc file :content (ssw/scrollable jtext_pane) 
                 :component jtext_pane

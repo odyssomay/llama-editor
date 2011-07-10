@@ -3,6 +3,7 @@
   :description "Llama is a lightweight editor for the clojure language."
   :main llama.core
   :resources-path "icons"
+  :aot [llama.lexer.Token]
   :dependencies [[org.clojure/clojure "1.2.1"]
                  [org.clojure/tools.logging "0.1.2"]
                  [hafni "1.0.6-SNAPSHOT"]
