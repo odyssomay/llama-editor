@@ -50,16 +50,17 @@
                     :act project/create-new-project)
    (comp-and-events (menu-item :text "Open" :mnemonic \O)
                     :act project/load-project-from-file)
-   []
-   (comp-and-events (menu-item :text "Run" :mnemonic \R)
-                    :act project/run-current-project)
-   (comp-and-events (menu-item :text "Stop" :mnemonic \S)
-                    :act project/stop-current-project)
-   []
-   (comp-and-events (menu-item :text "Start repl")
-                    :act project/start-project-repl)
-   (comp-and-events (menu-item :text "Stop repl")
-                    )])
+;   []
+;   (comp-and-events (menu-item :text "Run" :mnemonic \R)
+;                    :act project/run-current-project)
+;   (comp-and-events (menu-item :text "Stop" :mnemonic \S)
+;                    :act project/stop-current-project)
+;   []
+;   (comp-and-events (menu-item :text "Start repl")
+;                    :act project/start-project-repl)
+;   (comp-and-events (menu-item :text "Stop repl")
+;                    )
+])
 
 ;(defn create-toolbar []
 ;  (toolbar ["icons/new_file.png" "Create a new file" new-file]
