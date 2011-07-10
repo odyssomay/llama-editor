@@ -9,6 +9,8 @@
             (llama [editor :as editor]
                    [repl :as repl])
             (seesaw [core :as ssw]
+                    [mig :as ssw-mig]
+                    [color :as ssw-color]
                     [chooser :as ssw-chooser])
             [hafni-seesaw.core :as hssw]
             (leiningen [core :as lein-core]
@@ -16,7 +18,10 @@
                        [deps :as lein-deps])
             (Hafni.swing [dialog :as dialog])))
 
-(def project-pane (ssw/flow-panel))
+(def project-pane 
+  (let [p (ssw-mig/mig-panel)]
+    (.setBackground p (ssw-color/color 255 255 255))
+    p))
 
 (defn run-project [project]
   {:pre [(contains? project :project-thread)]}
@@ -81,7 +86,7 @@
   (>>> clone
        (*** (hssw/output-arr project-pane :items)
             create-new-project-tree)
-       #(concat (first %) [(second %)])
+       #(concat (first %) [[(second %) "span"]])
        (hssw/input-arr project-pane :items)))
 
 (def create-new-project
@@ -97,9 +102,9 @@
 (def load-project-from-file
   (>>> (constantly [nil nil])
        (||| (fn [& _] 
-              (dialog/open-file))
+              (ssw-chooser/choose-file))
             (>>> first
-                 #(lein-core/read-project (:path %))
+                 #(lein-core/read-project (.getCanonicalPath %))
                  #(assoc % :project-thread (atom nil))
                  load-project))))
 

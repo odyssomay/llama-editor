@@ -83,7 +83,7 @@
                                     (menu "Project" :content project-menu-content)])]
     (frame :content 
            (ssw/top-bottom-split 
-             (ssw/left-right-split project/project-pane
+             (ssw/left-right-split (ssw/scrollable project/project-pane)
                                    editor/editor-pane)
                                    repl/repl-pane)
            :title "llama editor" 
