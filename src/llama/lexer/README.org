@@ -7,4 +7,3 @@ generate.sh does the following:
 1. the clojure script createcljflex.clj generates clojure.flex from clojure_raw.flex
 2. jflex generates a lexer from clojure.flex, called ClojureLexer.java
 3. the java file is compiled
-4. the resulting .class file is moved to ../src/llama/
