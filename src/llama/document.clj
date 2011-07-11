@@ -23,23 +23,20 @@
 (def *default-color* (color "black"))
 
 (defn get-styles []
-    [{:name "OPERATOR"   :color (color "gray")}
-     {:name "KEYWORD"    :bold true}
-     {:name "KEYWORD2"   :bold true}
-     {:name "IDENTIFIER" :color *default-color*}
-     {:name "NUMBER"     :color (color 158 116 237) :bold true}
-     {:name "STRING"     :color (color 0 150 0)}
-     {:name "STRING2"    :color *default-color*}
-     {:name "COMMENT"    :color (color "light_gray")}
-     {:name "COMMENT2"   :color *default-color*}
-     {:name "REGEX"      :color (color "red")}
-     {:name "REGEX2"     :color *default-color*}
-     {:name "TYPE"       :color (color 100 150 150)}
-     {:name "TYPE2"      :color *default-color*}
-     {:name "TYPE3"      :color *default-color*}
-     {:name "DEFAULT"    :color *default-color*}
-     {:name "WARNING"    :color (color "red")}
-     {:name "ERROR"      :color (color "red")}])
+    [{:name "SEPARATOR"   :color (color "blue")}
+     {:name "CORE-SYMBOL" :bold true}
+     {:name "NEW-CLASS"   :italic true}
+     {:name "IDENTIFIER"  :color *default-color*}
+     {:name "NUMBER"      :color (color 158 116 237) :bold true}
+     {:name "STRING"      :color (color 0 150 0)}
+     {:name "COMMENT"     :color (color "light_gray")}
+     {:name "KEYWORD"     :color (color 100 150 150)}
+     {:name "DEFAULT"     :color *default-color*}
+;;
+     {:name "REGEX"       :color (color "red")}
+     {:name "REGEX2"      :color *default-color*}
+     {:name "WARNING"     :color (color "red")}
+     {:name "ERROR"       :color (color "red")}])
 
 (defn init-undoable-edits [jdoc]
   (let [manager (javax.swing.undo.UndoManager.)
