@@ -1,9 +1,5 @@
 (ns llama.project
   (:use clj-arrow.arrow
-        (Hafni.swing 
-          [component :only [component input-arr]]
-          [tree :only [tree]]
-          [view :only [icon]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [editor :as editor]
@@ -72,9 +68,10 @@
   (.setIcon c (ssw/icon (ClassLoader/getSystemResource icon))))
 
 (defn create-new-project-tree [project]
-  (let [t (tree :content (create-project-file-tree project))
-        tc (component t)
+  (let [tc (javax.swing.JTree.);(tree :content (create-project-file-tree project))
+;        tc (component tr)
         project (assoc project ::file-tree tc)]
+    (hssw/config! tc :content (create-project-file-tree project))
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
                                (let [path (->> raw_path
