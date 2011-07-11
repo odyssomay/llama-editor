@@ -126,8 +126,12 @@
 
 (defn get-token-highlight [offset text lexer]
   (let [tokens (get-tokens lexer text)]
-    (map (fn [x] [(.toString (.type x)) (.start x) (.length x)]) tokens)))
+    (apply concat
+           (map 
+             #(map (fn [x] [(.toString (.type x)) (.start x) (.length x)]) %) 
+             tokens))))
 
 (let [lexer (ClojureLexer. (StringReader. ""))]
   (defn clj-highlight [offset text]
     (get-token-highlight offset text lexer)))
+

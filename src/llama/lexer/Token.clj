@@ -21,10 +21,11 @@
 (defn -length [this]
   (:length (.state this)))
 
+(comment
 (defn -equals [this obj]
   {:pre [(= (class obj) (class this))]}
   (let [s1 (.state this)
         s2 (.state obj)]
     (= (dissoc s1 :line :offset)
        (dissoc s2 :line :offset))))
-
+)
