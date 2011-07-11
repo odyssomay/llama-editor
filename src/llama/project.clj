@@ -24,14 +24,27 @@
     p))
 
 (defn run-project [project]
-  {:pre [(contains? project :project-thread)]}
-  (let [a (:project-thread project)]
-    (reset! a (Thread. #(lein-run/run project)))
+  {:pre [(contains? project ::project-thread)
+         (contains? project ::file-tree)]}
+  (let [a (::project-thread project)]
+    (reset! a (Thread. 
+                (fn []
+                  (let [d (ssw/custom-dialog 
+                            :parent (::file-tree project) :on-close :dispose :modal? true
+                            :content (ssw/vertical-panel 
+                                       :items [(ssw/label :text (str "Running project " (:name project) ".")
+                                                          :border 10)
+                                               (ssw/progress-bar :indeterminate? true :border 10)]))
+                        t (Thread. #(do (lein-run/run project)
+                                        (ssw/dispose! d)))]
+                    (.start t)
+                    (-> d ssw/pack! ssw/show!)
+                    (if (.isAlive t) (.interrupt t))))))
     (.start @a)))
 
 (defn stop-project [project]
-  {:pre [(contains? project :project-thread)]}
-  (let [a (:project-thread project)]
+  {:pre [(contains? project ::project-thread)]}
+  (let [a (::project-thread project)]
     (when (and @a (.isAlive @a))
       (.interrupt @a)
       (reset! a nil)))) ; not really needed, but more elegant
@@ -60,7 +73,8 @@
 
 (defn create-new-project-tree [project]
   (let [t (tree :content (create-project-file-tree project))
-        tc (component t)]
+        tc (component t)
+        project (assoc project ::file-tree tc)]
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
                                (let [path (->> raw_path
@@ -86,15 +100,15 @@
                   ".jar"  (set-icon c "java-jar.png")
                   ".java" (set-icon c "System-Java-icon.png")
                   nil))
-;                (and (.toString value) (.endsWith (.toString value) ".clj"))
-;                    (.setIcon c (component (ssw/icon (ClassLoader/getSystemResource "clj.gif")))))
               c))))
     tc))
 
 (def load-project
   (>>> clone
        (*** (hssw/output-arr project-pane :items)
-            create-new-project-tree)
+            (>>> 
+              #(assoc % ::project-thread (atom nil))
+              create-new-project-tree))
        #(concat (first %) [[(second %) "span"]])
        (hssw/input-arr project-pane :items)))
 
@@ -114,6 +128,5 @@
               (ssw-chooser/choose-file))
             (>>> first
                  #(lein-core/read-project (.getCanonicalPath %))
-                 #(assoc % :project-thread (atom nil))
                  load-project))))
 
