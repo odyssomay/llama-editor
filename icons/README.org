@@ -1,0 +1,6 @@
+
+icon sources:
+
+- clj_raw.gif - [[clojure.org]]
+- System-Java-icon_raw.png - [[http://www.iconarchive.com/show/refresh-cl-icons-by-tpdkdesign.net/System-Java-icon.html]]
+- java-jar_raw.png - [[http://www.iconfinder.com/icondetails/1601/128/]]

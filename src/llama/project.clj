@@ -55,6 +55,9 @@
 (def create-project-file-tree
   (>>> :target-dir create-file-tree))
 
+(defn set-icon [c icon]
+  (.setIcon c (ssw/icon (ClassLoader/getSystemResource icon))))
+
 (defn create-new-project-tree [project]
   (let [t (tree :content (create-project-file-tree project))
         tc (component t)]
@@ -77,8 +80,14 @@
       tc (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
           (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
             (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
-              (when (and (.toString value) (.endsWith (.toString value) ".clj"))
-                    (.setIcon c (component (ssw/icon (ClassLoader/getSystemResource "clj.gif")))))
+              (if (.toString value)
+                (condp #(.endsWith (.toString %2) %1) value
+                  ".clj"  (set-icon c "clj.gif")
+                  ".jar"  (set-icon c "java-jar.png")
+                  ".java" (set-icon c "System-Java-icon.png")
+                  nil))
+;                (and (.toString value) (.endsWith (.toString value) ".clj"))
+;                    (.setIcon c (component (ssw/icon (ClassLoader/getSystemResource "clj.gif")))))
               c))))
     tc))
 
