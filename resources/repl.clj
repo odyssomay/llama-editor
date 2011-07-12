@@ -1,22 +1,11 @@
 (require 'clojure.main)
 
-;(defn init []
-;  (let [out *out*]
-;    (def *out* 
-;      (proxy [java.io.Writer] []
-;        (write ([input offset length] )
-;               ([input]))
-;        (flush [] (.flush out))
-;        (close [] (.close out))))))
-;
+(println ";" *ns*)
 
 (defn caught [e]
       (println (.toString (clojure.main/repl-exception e)))
       (.printStackTrace e *err*)
       (.print *err* "\n")) 	
-
-(def out (java.io.OutputStreamWriter. System/out))
-(.write out "hello world")
 
 (with-open [writer
             (proxy [java.io.Writer] []
