@@ -66,9 +66,9 @@ Separator = [\r\n \(\)\[\]\{\}]
 StandardComment = ;{InputCharacter}*{LineTerminator}?
 FormComment = \(comment [^\)]*\)
 
-Number = -?[0-9\.]M?
-Ratio = -?[0-9/]
-ArbitraryBaseNumber = -?[0-3]?[0-9]{1}r[0-9a-zA-Z]*
+Number = -?[0-9\.]+M?
+Ratio = -?[0-9]+\/[0-9]+
+ArbitraryBaseNumber = -?[0-3]?[0-9]{1}r[0-9a-zA-Z]+
 OctalNumber = 0x[0-9a-fA-F]+
 
 String = \"([^\"]|\\\")*\"
@@ -132,7 +132,10 @@ return ret;
 
 {String} { return token("STRING"); }
 
-{NewClass} { return token("NEW-CLASS"); }
+{NewClass} { 
+yypushback(1);
+return token("NEW-CLASS"); 
+}
 
 {Separator} { return token("SEPARATOR"); }
 

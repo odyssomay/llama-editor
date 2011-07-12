@@ -11,8 +11,7 @@
             [hafni-seesaw.core :as hssw]
             (leiningen [core :as lein-core]
                        [run :as lein-run]
-                       [deps :as lein-deps])
-            (Hafni.swing [dialog :as dialog])))
+                       [deps :as lein-deps])))
 
 (def project-pane 
   (let [p (ssw-mig/mig-panel)]
@@ -65,7 +64,7 @@
   (>>> :target-dir create-file-tree))
 
 (defn set-icon [c icon]
-  (.setIcon c (ssw/icon (ClassLoader/getSystemResource icon))))
+  (.setIcon c (ssw/icon (ClassLoader/getSystemResource (str "icons/" icon)))))
 
 (defn create-new-project-tree [project]
   (let [tc (javax.swing.JTree.);(tree :content (create-project-file-tree project))

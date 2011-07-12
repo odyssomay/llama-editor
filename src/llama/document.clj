@@ -86,8 +86,8 @@
       (invoke-later
         (let [h (clj-highlight 0 (.getText jtext_pane))
               new_h (apply concat (map rest (:+ (diff @old_h h))))]
-          (println "Highlighting " (count new_h) " tokens")
-          (println "Total tokens is " (count h))
+;          (println "Highlighting " (count new_h) " tokens")
+;          (println "Total tokens is " (count h))
           (dorun (map (hssw/input-arr jtext_pane :style)
                       new_h))
           (swap! old_h (constantly h)))))))
@@ -97,13 +97,13 @@
         jtext_pane (javax.swing.JTextPane.)
         update-highlight (create-highlight-fn jtext_pane)
         pane (hssw/listen jtext_pane
-                              :insert (fn [[index input]]
-                                        (if (= input "\n")
-                                          (let [text (.getText jtext_pane 0 index)]
-                                            [index (indent text)])
-                                          [index input]))
-                              :inserted update-highlight
-                              :removed update-highlight)
+                          :insert (fn [[index input]]
+                                    (if (= input "\n")
+                                      (let [text (.getText jtext_pane 0 index)]
+                                        [index (indent text)])
+                                      [index input]))
+                          :inserted update-highlight
+                          :removed update-highlight)
         manager (init-undoable-edits (.getDocument jtext_pane))]
     (hssw/config! jtext_pane :font (get-font) :styles (get-styles))
     (hssw/config! jtext_pane :text text) ; text must be added afterwards, since styles wont exist otherwise

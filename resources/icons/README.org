@@ -1,0 +1,10 @@
+
+icon sources:
+
+- clj_raw.gif - [[clojure.org]]
+- System-Java-icon_raw.png - [[http://www.iconarchive.com/show/refresh-cl-icons-by-tpdkdesign.net/System-Java-icon.html]]
+- java-jar_raw.png - [[http://www.iconfinder.com/icondetails/1601/128/]]
+- gnome_terminal_raw.png - [[http://findicons.com/icon/193750/gnome_terminal?id=284087#]]
+- gnome_dialog_warning_raw.png - [[http://findicons.com/icon/67005/gnome_dialog_warning?id=67375#]]
+- gnome_view_refresh_raw.png - [[http://findicons.com/icon/67265/gnome_view_refresh?id=67265]]
+- gnome_process_stop_raw.png - [[http://findicons.com/icon/67254/gnome_process_stop?id=67254#]]
