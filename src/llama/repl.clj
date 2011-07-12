@@ -30,13 +30,18 @@
   (let [jdoc (.getDocument jtext_pane)
         text (atom "")]
     (.start (Thread. (fn []
-                       (swap! text str (-> stream .read char str))
-                       (when (not (.ready stream))
-                         (ssw/invoke-now 
-                           (.insertString jdoc (.getLength jdoc) @text nil)
-                           (.setCaretPosition jtext_pane (.getLength jdoc)))
-                         (reset! text ""))
-                       (recur))))))
+                       (try 
+                         (do
+                           (swap! text str (-> stream .read char str))
+                           (when (not (.ready stream))
+                             (ssw/invoke-now 
+                               (.insertString jdoc (.getLength jdoc) @text nil)
+                               (.setCaretPosition jtext_pane (.getLength jdoc)))
+                             (reset! text ""))
+                           (recur))
+                         (catch java.lang.IllegalArgumentException _ 
+                           ; this means that the stream is closed
+                           )))))))
 
 (defn send-to-repl [repl text]
   (.write (:output_stream repl) text)
@@ -134,37 +139,47 @@
 (defn get-icon-url [icon]
   (ClassLoader/getSystemResource (str "icons/" icon)))
 
+(defn init-repl-panels [repl output_pane error_pane input_panel]
+  (.setText output_pane "") ; these are for restarting
+  (.setText error_pane "")
+  (.removeAll input_panel)
+  (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
+  (.add input_panel (init-repl-input-field repl output_pane)
+                    java.awt.BorderLayout/SOUTH)
+  (init-repl-text-fields repl output_pane error_pane))
+
 (declare close-current-repl)
 
 (defn init-new-repl [project]
-  (let [document (create-doc {})
-        repl (start-repl project) ;(llama.leiningen.repl/init-repl-server project 6000)
-        err_text (javax.swing.JTextArea.)
-        jtext_pane (:component document)
-        jdoc (.getStyledDocument jtext_pane)
-        input_field (init-repl-input-field repl jtext_pane)
-        input_panel (ssw/border-panel :center (ssw/scrollable jtext_pane) :south input_field)
+  (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
+        jtext_pane (:component (create-doc {}))
+        err_text (javax.swing.JTextArea.) 
+        input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))
         button_panel 
         (ssw/vertical-panel 
           :items 
           [(ssw/action :icon (get-icon-url "gnome_terminal.png")
+;                       :tip "Show the input 
                        :handler (fn [_] (.show (.getLayout repl_panel) repl_panel "input-panel")))
            (ssw/action :icon (get-icon-url "gnome_dialog_warning.png")
+                       :tip "Show the error output of this repl."
                        :handler (fn [_] (.show (.getLayout repl_panel) repl_panel "error-panel")))
-;           (ssw/action :icon (get-icon-url "gnome_view_refresh.png")
-;                       :handler (fn [_] (
+           (ssw/action :icon (get-icon-url "gnome_view_refresh.png")
+                       :handler (fn [_]
+                                  (stop-repl @repl)
+                                  (reset! repl (start-repl project))
+                                  (init-repl-panels @repl jtext_pane err_text input_panel)
+                                  (.updateUI input_panel)))
            (ssw/action :icon (get-icon-url "gnome_process_stop.png")
-                       :handler (fn [_] 
-                                  (stop-repl repl)
-                                  (close-current-repl nil)))])
+                       :tip "Destroy the repl process and close this repl's window."
+                       :handler (fn [_] (stop-repl @repl) (close-current-repl nil)))])
         panel (ssw/border-panel :center repl_panel
                                 :west button_panel)]
+    (init-repl-panels @repl jtext_pane err_text input_panel)
     (.add repl_panel input_panel "input-panel")
     (.add repl_panel (ssw/scrollable err_text) "error-panel")
 
-    (init-repl-text-fields repl jtext_pane err_text)
-    
     (.setEditable jtext_pane false)
     (.setEditable err_text false)
     {:content panel  
