@@ -41,9 +41,7 @@
 
 (def repl-menu-content
   [(comp-and-events (menu-item :text "New" :mnemonic \N)
-                    :act repl/create-new-anonymous-repl)
-   (comp-and-events (menu-item :text "Close" :mnemonic \C)
-                    :act repl/close-current-repl)])
+                    :act repl/create-new-anonymous-repl)])
 
 (def project-menu-content
   [(comp-and-events (menu-item :text "New" :mnemonic \N)
