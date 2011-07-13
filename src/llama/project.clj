@@ -69,23 +69,26 @@
 (defn create-new-project-tree [project]
   (let [tc (javax.swing.JTree.);(tree :content (create-project-file-tree project))
 ;        tc (component tr)
-        project (assoc project ::file-tree tc)]
+        project (assoc project ::file-tree tc)
+        project_menu (create-project-menu project)]
     (hssw/config! tc :content (create-project-file-tree project))
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
                                (let [path (->> raw_path
                                             .getPath
                                             (map :root))]
-                                 (if (.endsWith (last path) ".clj")
-                                   [(ssw/action :name "open file" 
-                                                :handler (fn [_]
-                                                           (editor/open-file {:path (.getCanonicalPath 
-                                                                                      (apply file 
-                                                                                             (cons (:target-dir project) (rest path))))
-                                                                              :title (last path)
-                                                                              })))]
-                                   (if (= (count path) 1)
-                                     (create-project-menu project)))))))
+                                 (concat 
+                                   (cond 
+                                     (.endsWith (last path) ".clj")
+                                     [(ssw/action :name "open file" 
+                                                  :handler (fn [_]
+                                                             (editor/open-file {:path (.getCanonicalPath 
+                                                                                        (apply file 
+                                                                                               (cons (:target-dir project) (rest path))))
+                                                                                :title (last path)})))
+                                      :separator]
+                                     :else [])
+                                   project_menu)))))
     (.setCellRenderer
       tc (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
           (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
