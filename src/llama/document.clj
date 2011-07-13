@@ -111,7 +111,6 @@
                 (fn [_] (if (.isEditable jtext_pane)
                           (.requestFocusInWindow jtext_pane))))
     (assoc file :content (ssw/scrollable jtext_pane) 
-                :component jtext_pane
                 :text-pane jtext_pane
                 :manager manager)))
 
