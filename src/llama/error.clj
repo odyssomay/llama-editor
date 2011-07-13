@@ -30,7 +30,6 @@
                   [(ssw/action :name "OK" :handler (fn [_] (ssw/dispose! dialog))) "wrap"]]))
       (ssw/pack! dialog)
       (ssw/show! dialog))))
-;      (ssw/alert parent (str message "\n\n" solution)))))
 
 (let [errors (atom {})]
   (defn deferror [id message solution & options]
