@@ -47,6 +47,7 @@
 (defn send-to-repl [repl text]
   (.write (:output_stream repl) text)
   (.flush (:output_stream repl)))
+
 (defn init-repl-input-field [repl repl_pane]
   (let [input_field (:text-pane (create-doc {}))
         jdoc (.getDocument repl_pane) 
