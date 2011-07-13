@@ -1,9 +1,11 @@
 (ns llama.editor
     (:use clj-arrow.arrow
-          (llama document lib))
+          (llama document lib)
+          [clojure.java.io :only [file]])
     (:require [clojure.set :as cset] 
               [Hafni.swing.dialog :as file]
-              [seesaw.core :as ssw]
+              (seesaw [core :as ssw]
+                      [chooser :as ssw-chooser])
               [hafni-seesaw.core :as hssw]))
 
 (let [tp (ssw/tabbed-panel :overflow :scroll)
@@ -13,18 +15,14 @@
   (def selected-index
     (ignore #(.getSelectedIndex tabbed_pane)))
 
-  (def current-file
+  (def current-tab
     (>>> selected-index #(nth @docs %)))
 
   (def current-component
     (>>> selected-index #(:content (nth @docs %))))
 
-  (def current-pane
-    current-component)
-;    (>>> current-component component))
-
   (def current-text
-    (>>> current-pane #(.getText %)))
+    (>>> current-tab :text-pane #(.getText %)))
 
   ;; argument is a map with :title :path
   (def open-file
@@ -36,45 +34,47 @@
   ;; argument is ignored
   (def open-and-choose-file
     (>>> (constantly [nil nil])
-         (||| (ignore file/open-file)
-              (>>> first #(cset/rename-keys % {:name :title}) open-file))))
+         (||| (fn [_] 
+                (if-let [f (ssw-chooser/choose-file)]
+                  {:title (.getName f)
+                   :path (.getCanonicalPath f)}))
+              (>>> first open-file))))
 
   ;; argument is ignored
   (def new-file 
     (>>> (constantly {:title "Untitled" :path nil})
          open-file))
 
-  ;; argument is a pair where the first value is the path
-  ;; and the second value is ignored
+  ;; argument is the path
   (def save-file
-    (>>> (snd current-text) (fn [[path text]] (spit path text))))
+    (>>> clone (snd current-text) (fn [[path text]] (spit path text))))
 
   ;; argument is ignored
   (def save-as
     (>>> (constantly [nil nil])
-         (||| (ignore #(:path (file/save-file)))
-              (&&& save-file
+         (||| (ignore #(.getCanonicalPath (ssw-chooser/choose-file)))
+              (&&& (fst save-file)
                    (>>> (snd selected-index)
                         (fn [[path index]] 
-                          (swap! docs (fn [coll] 
-                                        (change-i index #(assoc % :title path) coll))))
+                          (swap! docs (fn [coll]
+                                        (change-i index #(assoc % :path path :title (.getName (file path))) coll))))
                         (hssw/input-arr tp :content))))))
 
   ;; argument is ignored
   (def save
-    (>>> current-file
+    (>>> current-tab
          (>>> clone
               (||| :path
-                   save-file
+                   (fst save-file)
                    save-as))))
 
   (def undo
-    (>>> current-file
+    (>>> current-tab
          (>>> :manager
               #(if (.canUndo %) (.undo %)))))
 
   (def redo
-    (>>> current-file
+    (>>> current-tab
          (>>> :manager
               #(if (.canRedo %) (.redo %)))))
 
