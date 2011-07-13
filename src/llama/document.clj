@@ -4,6 +4,7 @@
           [highlight :only [clj-highlight]])
         (Hafni.swing
           [utils :only [*available-fonts* color font]])
+        [clojure.string :only [split]]
         [seesaw.invoke :only [invoke-later]]
         clj-arrow.arrow
         [clj-diff.core :only [diff]])
@@ -92,7 +93,13 @@
                       new_h))
           (swap! old_h (constantly h)))))))
 
-(defn create-doc [file]
+(defmulti create-doc (fn [file]
+                       (if (:filetype file)
+                         (:filetype file)
+                         (if (:path file)
+                           (last (split (:path file) #"\."))))))
+
+(defmethod create-doc "clj" [file]
   (let [text (if (:path file) (slurp (:path file)) "")
         jtext_pane (javax.swing.JTextPane.)
         update-highlight (create-highlight-fn jtext_pane)
@@ -112,5 +119,14 @@
                           (.requestFocusInWindow jtext_pane))))
     (assoc file :content (ssw/scrollable jtext_pane) 
                 :text-pane jtext_pane
+                :manager manager)))
+
+(defmethod create-doc :default [file]
+  (let [text (if (:path file) (slurp (:path file)) "")
+        jtext (javax.swing.JTextPane.)
+        manager (init-undoable-edits (.getDocument jtext))]
+    (hssw/config! jtext :text text)
+    (assoc file :content (ssw/scrollable jtext)
+                :text-pane jtext
                 :manager manager)))
 
