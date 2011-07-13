@@ -16,9 +16,11 @@
     (java.awt.event KeyEvent KeyListener)))
 
 (defn start-repl [project]
-  (let [classpath (lein-classpath/get-classpath-string project)
+  (let [classpath (if (::anonymous project)
+                    (.getPath (cio/file "lib" "clojure-1.2.1.jar"))
+                    (lein-classpath/get-classpath-string project))
         repl_path (.getPath (ClassLoader/getSystemResource "repl.clj"))]
-    (start-process (str "java -cp " classpath " clojure.main " repl_path) )))
+    (start-process (str "java -cp " classpath " clojure.main " repl_path))))
 
 (defn stop-repl [{:keys [process input_stream output_stream]}]
 ;  (.interrupt thread)
@@ -39,9 +41,8 @@
                                (.setCaretPosition jtext_pane (.getLength jdoc)))
                              (reset! text ""))
                            (recur))
-                         (catch java.lang.IllegalArgumentException _ 
-                           ; this means that the stream is closed
-                           )))))))
+                         ; this means that the stream is closed
+                         (catch java.lang.IllegalArgumentException _ )))))))
 
 (defn send-to-repl [repl text]
   (.write (:output_stream repl) text)
@@ -162,19 +163,20 @@
         (ssw/vertical-panel 
           :items 
           [(ssw/action :icon (get-icon-url "gnome_terminal.png")
-;                       :tip "Show the input 
+                       :tip "Show the input and output of this repl." 
                        :handler (fn [_] (.show (.getLayout repl_panel) repl_panel "input-panel")))
            (ssw/action :icon (get-icon-url "gnome_dialog_warning.png")
                        :tip "Show the error output of this repl."
                        :handler (fn [_] (.show (.getLayout repl_panel) repl_panel "error-panel")))
            (ssw/action :icon (get-icon-url "gnome_view_refresh.png")
+                       :tip "Restart this repl."
                        :handler (fn [_]
                                   (stop-repl @repl)
                                   (reset! repl (start-repl project))
                                   (init-repl-panels @repl jtext_pane err_text input_panel)
                                   (.updateUI input_panel)))
            (ssw/action :icon (get-icon-url "gnome_process_stop.png")
-                       :tip "Destroy the repl process and close this repl's window."
+                       :tip "Destroy the repl process and close the repl tab."
                        :handler (fn [_] (stop-repl @repl) (close-current-repl nil)))])
         panel (ssw/border-panel :center repl_panel
                                 :west button_panel)]
@@ -197,20 +199,16 @@
          (fn [[coll index]]
            (nth coll index))))
 
-  (defn create-new-repl-arr [project]
-    (>>> (output-arr tabbed_pane :content)
-         #(conj % (init-new-repl project))
-         (input-arr tabbed_pane :content)))
-
   (def create-new-repl
     (>>> (&&& (output-arr tabbed_pane :content)
               init-new-repl)
-         #(conj (first %) (second %))
-         (input-arr tabbed_pane :content)))
+         (fn [[items new_repl]] 
+           ((input-arr tabbed_pane :content) (conj items new_repl))
+           (.setSelectedComponent (component tabbed_pane) (:content new_repl)))))
 
   (def create-new-anonymous-repl
-    (fn [_] ))
-;    (create-new-repl-arr "repl" []))
+    (>>> (constantly {:name "anonymous" ::anonymous true})
+         create-new-repl))
 
   (def close-current-repl
     (>>>
