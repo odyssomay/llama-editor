@@ -3,9 +3,11 @@
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [editor :as editor]
+                   [error :as error]
                    [repl :as repl])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
+                    [tree :as ssw-tree]
                     [color :as ssw-color]
                     [chooser :as ssw-chooser])
             [hafni-seesaw.core :as hssw]
@@ -21,21 +23,24 @@
 (defn run-project [project]
   {:pre [(contains? project ::project-thread)
          (contains? project ::file-tree)]}
-  (let [a (::project-thread project)]
-    (reset! a (Thread. 
-                (fn []
-                  (let [d (ssw/custom-dialog 
-                            :parent (::file-tree project) :on-close :dispose :modal? true
-                            :content (ssw/vertical-panel 
-                                       :items [(ssw/label :text (str "Running project " (:name project) ".")
-                                                          :border 10)
-                                               (ssw/progress-bar :indeterminate? true :border 10)]))
-                        t (Thread. #(do (lein-run/run project)
+  (if (contains? project :main)
+    (let [a (::project-thread project)]
+      (reset! a (Thread. 
+                  (fn []
+                    (let [d (ssw/custom-dialog 
+                              :parent (::file-tree project) :on-close :dispose :modal? true
+                              :content (ssw/vertical-panel 
+                                         :items [(ssw/label :text (str "Running project " (:name project) ".")
+                                                            :border 10)
+                                                 (ssw/progress-bar :indeterminate? true :border 10)]))
+                          t (Thread. #(do (lein-run/run project)
                                         (ssw/dispose! d)))]
-                    (.start t)
-                    (-> d ssw/pack! ssw/show!)
-                    (if (.isAlive t) (.interrupt t))))))
-    (.start @a)))
+                      (.start t)
+                      (-> d ssw/pack! ssw/show!)
+                      (if (.isAlive t) (.interrupt t))))))
+      (.start @a))
+    (error/show-error "no main in project" 
+                      :parent (::file-tree project))))
 
 (defn stop-project [project]
   {:pre [(contains? project ::project-thread)]}
@@ -54,37 +59,40 @@
    (ssw/action :name "repl"
                :handler (fn [_] (repl/create-new-repl project)))])
 
-(defn create-file-tree [path]
-  (let [root (file path)
-        child (map create-file-tree (.listFiles root))]
-    {:root (.getName root)
-     :child child}))
+(defrecord custom-file [file]
+  Object
+  (toString [_] (.getName file)))
 
-(def create-project-file-tree
-  (>>> :target-dir create-file-tree))
+(defn create-file-tree-model [path]
+  (ssw-tree/simple-tree-model 
+    (fn [node] (.isDirectory (:file node)))
+    (fn [parent] 
+      (let [children (.listFiles (:file parent))
+            groups (group-by #(.isDirectory %) children)]
+       (map #(custom-file. %)
+            (concat (sort-by #(.getName %) (get groups true))
+                    (sort-by #(.getName %) (get groups false))))))
+    (custom-file. (file path))))
 
 (defn set-icon [c icon]
   (.setIcon c (ssw/icon (ClassLoader/getSystemResource (str "icons/" icon)))))
 
 (defn create-new-project-tree [project]
-  (let [tc (javax.swing.JTree.);(tree :content (create-project-file-tree project))
-;        tc (component tr)
+  (let [tc (javax.swing.JTree. (create-file-tree-model (:target-dir project)))
         project (assoc project ::file-tree tc)
         project_menu (create-project-menu project)]
-    (hssw/config! tc :content (create-project-file-tree project))
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
                                (let [path (->> raw_path
                                             .getPath
-                                            (map :root))]
+                                            (map #(.getName (:file %))))
+                                     selected_file (apply file (cons (:target-dir project) (rest path)))]
                                  (concat 
                                    (cond 
-                                     (.endsWith (last path) ".clj")
+                                     (not (.isDirectory selected_file))
                                      [(ssw/action :name "open file" 
                                                   :handler (fn [_]
-                                                             (editor/open-file {:path (.getCanonicalPath 
-                                                                                        (apply file 
-                                                                                               (cons (:target-dir project) (rest path))))
+                                                             (editor/open-file {:path (.getCanonicalPath selected_file)
                                                                                 :title (last path)})))
                                       :separator]
                                      :else [])
