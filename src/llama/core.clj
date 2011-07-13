@@ -6,7 +6,9 @@
             (llama [editor :as editor]
                    [repl :as repl]
                    [project :as project]))
-  (:import (javax.swing.text DefaultEditorKit$CutAction DefaultEditorKit$CopyAction DefaultEditorKit$PasteAction)
+  (:import (javax.swing.text DefaultEditorKit$CutAction 
+                             DefaultEditorKit$CopyAction 
+                             DefaultEditorKit$PasteAction)
            (javax.swing JMenuItem)))
 
 (def file-menu-content 
@@ -44,35 +46,10 @@
                     :act repl/create-new-anonymous-repl)])
 
 (def project-menu-content
-  [(comp-and-events (menu-item :text "New" :mnemonic \N)
+  [(comp-and-events (menu-item :text "New" :mnemonic \N :accelerator "ctrl shift N")
                     :act project/create-new-project)
-   (comp-and-events (menu-item :text "Open" :mnemonic \O)
-                    :act project/load-project-from-file)
-;   []
-;   (comp-and-events (menu-item :text "Run" :mnemonic \R)
-;                    :act project/run-current-project)
-;   (comp-and-events (menu-item :text "Stop" :mnemonic \S)
-;                    :act project/stop-current-project)
-;   []
-;   (comp-and-events (menu-item :text "Start repl")
-;                    :act project/start-project-repl)
-;   (comp-and-events (menu-item :text "Stop repl")
-;                    )
-])
-
-;(defn create-toolbar []
-;  (toolbar ["icons/new_file.png" "Create a new file" new-file]
-;	   ["icons/open_file.png" "Open an existing file" open-and-choose-file]
-;	   ["icons/save_file.png" "Save file" save-as]
-;	   []
-;	   ["icons/new_project.png" "Create a new project" nil]
-;	   ["icons/open_project.png" "Open an existing project" nil]
-;	   ["icons/close_project.png" "Close project" nil]
-;	   []
-;	   ["icons/run_project.png" "Run project" nil]
-;	   ["icons/stop_project.png" "Stop project" nil]
-;	   []
-;	   ["icons/start_project_repl.png" "Start project repl" nil]))
+   (comp-and-events (menu-item :text "Open" :mnemonic \O :accelerator "ctrl shift O")
+                    :act project/load-project-from-file)])
 
 (defn -main []
   (let [menubar (menu-bar :content [(menu "File" :content file-menu-content)
