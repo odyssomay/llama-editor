@@ -105,11 +105,8 @@
 )
 
 (defn init-repl-input-field [repl repl_pane]
-  (let [input_field (:component (create-doc {}))
+  (let [input_field (:text-pane (create-doc {}))
         jdoc (.getDocument repl_pane) 
-        set-height (fn [rows] 
-                     (println "yep"))
-        get-height (fn [] 1)
         reset-text? (atom false)]
     (.addKeyListener
       input_field
@@ -120,12 +117,10 @@
             (let [text (str (.getText input_field) "\n")]
               (if (= (.trim text) "")
                 (reset! reset-text? true)
-                (if (zero? (parens-count text))
-                  (do
-                    (reset! reset-text? true)
-                    (.insertString jdoc (.getLength jdoc) text nil) 
-                    (send-to-repl repl text))
-                  (set-height (inc (get-height))))))))
+                (when (zero? (parens-count text))
+                  (reset! reset-text? true)
+                  (.insertString jdoc (.getLength jdoc) text nil) 
+                  (send-to-repl repl text))))))
         (keyTyped [_ e] )
         (keyReleased 
           [_ e]
@@ -155,7 +150,7 @@
 
 (defn init-new-repl [project]
   (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
-        jtext_pane (:component (create-doc {}))
+        jtext_pane (:text-pane (create-doc {}))
         err_text (javax.swing.JTextArea.) 
         input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))
