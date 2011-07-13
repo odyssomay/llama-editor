@@ -126,10 +126,11 @@
                     (send-to-repl repl text))
                   (set-height (inc (get-height))))))))
         (keyTyped [_ e] )
-        (keyReleased [_ e]
-                     (when @reset-text?
-                       (.setText input_field "")
-                       (reset! reset-text? false)))))
+        (keyReleased 
+          [_ e]
+          (when @reset-text?
+            (.setText input_field "")
+            (reset! reset-text? false)))))
     input_field)) 
 
 (defn init-repl-text-fields [repl output_pane error_pane]
@@ -140,13 +141,14 @@
   (ClassLoader/getSystemResource (str "icons/" icon)))
 
 (defn init-repl-panels [repl output_pane error_pane input_panel]
-  (.setText output_pane "") ; these are for restarting
-  (.setText error_pane "")
-  (.removeAll input_panel)
-  (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
-  (.add input_panel (init-repl-input-field repl output_pane)
-                    java.awt.BorderLayout/SOUTH)
-  (init-repl-text-fields repl output_pane error_pane))
+  (let [input_field  (init-repl-input-field repl output_pane)]
+    (.setText output_pane "") ; these are for restarting
+    (.setText error_pane "")
+    (.removeAll input_panel)
+    (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
+    (.add input_panel input_field java.awt.BorderLayout/SOUTH)
+    (init-repl-text-fields repl output_pane error_pane)
+    (ssw/listen output_pane :mouse-entered (fn [_] (.requestFocusInWindow input_field)))))
 
 (declare close-current-repl)
 
