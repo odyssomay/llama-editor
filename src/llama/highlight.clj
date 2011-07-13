@@ -124,7 +124,7 @@
 	  (recur (conj ans next))
 	  ans)))))
 
-(defn get-token-highlight [offset text lexer]
+(defn get-token-highlight [text lexer]
   (let [tokens (get-tokens lexer text)]
     (apply concat
            (map 
@@ -132,6 +132,6 @@
              tokens))))
 
 (let [lexer (ClojureLexer. (StringReader. ""))]
-  (defn clj-highlight [offset text]
-    (get-token-highlight offset text lexer)))
+  (defn clj-highlight [text]
+    (get-token-highlight text lexer)))
 

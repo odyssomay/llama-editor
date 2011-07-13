@@ -85,7 +85,7 @@
   (let [old_h (atom ())]
     (fn [& _]
       (invoke-later
-        (let [h (clj-highlight 0 (.getText jtext_pane))
+        (let [h (clj-highlight (.getText jtext_pane))
               new_h (apply concat (map rest (:+ (diff @old_h h))))]
 ;          (println "Highlighting " (count new_h) " tokens")
 ;          (println "Total tokens is " (count h))
