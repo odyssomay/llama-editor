@@ -63,5 +63,6 @@
                                    repl/repl-pane)
            :title "llama editor" 
            :size 800 500
-           :menu_bar menubar)))
+           :menu_bar menubar)
+    nil))
 
