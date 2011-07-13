@@ -17,7 +17,7 @@
 
 (defn start-repl [project]
   (let [classpath (if (::anonymous project)
-                    (.getPath (cio/file "lib" "clojure-1.2.1.jar"))
+                    (.getPath (ClassLoader/getSystemResource "clojure-1.2.1.jar"))
                     (lein-classpath/get-classpath-string project))
         repl_path (.getPath (ClassLoader/getSystemResource "repl.clj"))]
     (start-process (str "java -cp " classpath " clojure.main " repl_path))))
@@ -47,63 +47,6 @@
 (defn send-to-repl [repl text]
   (.write (:output_stream repl) text)
   (.flush (:output_stream repl)))
-
-(comment
-(defn repl-key-listener [jtext_pane repl]
-  (let [jdoc (.getStyledDocument jtext_pane)
-        state (atom {:pos 0})
-        update-state! (fn [field f] 
-                       (swap! state assoc field (f (get @state field))))
-        reset-state! (fn [field value]
-                       (swap! state assoc field value))
-        update-caret! (fn []
-                       (if (:text @state)
-                         (let [pos (+ (:start @state) (:pos @state))]
-                           (if-not (= (.getCaretPosition jtext_pane) pos)
-                             (.setCaretPosition jtext_pane pos)))
-                         (if-not (= (.getCaretPosition jtext_pane) (.getLength jdoc))
-                           (.setCaretPosition jtext_pane (.getLength jdoc)))))]
-    (.addCaretListener jtext_pane
-                       (reify javax.swing.event.CaretListener
-                         (caretUpdate [_ _] (update-caret!)))) 
-    (proxy [KeyListener] []
-      (keyPressed 
-        [e]
-        (let [s @state]
-          (update-caret!)
-          (condp = (.getKeyCode e)
-            KeyEvent/VK_LEFT (update-state! :pos #(max 0 (dec %)))
-            KeyEvent/VK_RIGHT (update-state! :pos #(min (count (:text @state)) (inc %)))
-            KeyEvent/VK_UP (update-state! :history-pos #(min (inc %) (count (:history @state))))
-            KeyEvent/VK_DOWN (update-state! :history-pos #(max (dec %) 0))
-            nil)))
-      (keyReleased [e] 
-                   (update-caret!)
-;                   (println "pos = " (:pos @state))
-;                   (println "text = " (:text @state))
-                   )
-      (keyTyped 
-        [e]
-        (let [c (.getKeyChar e)
-              s @state
-              text (:text s)]
-          (if (= c \newline)
-            (when (and text (zero? (parens-count text)))
-              (.insertString jdoc (.getLength jdoc) "\n" nil)
-              (send-to-repl repl (str text "\n"))
-              (reset-state! :text nil))
-            (do
-              (if (not text)
-                (swap! state assoc :start (.getLength jdoc) 
-                                   :pos 0))
-              (.insertString jdoc (+ (:start @state) (:pos @state)) (str c) nil)
-              (update-state! :text #(let [text (if % % "")]
-                                      (str (.substring text 0 (:pos @state))
-                                           c (.substring text (:pos @state)))))
-              (update-state! :pos inc)))))
-      )))
-)
-
 (defn init-repl-input-field [repl repl_pane]
   (let [input_field (:text-pane (create-doc {}))
         jdoc (.getDocument repl_pane) 
