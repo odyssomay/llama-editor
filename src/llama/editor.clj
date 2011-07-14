@@ -2,7 +2,7 @@
     (:use clj-arrow.arrow
           (llama document lib)
           [clojure.java.io :only [file]])
-    (:require [clojure.set :as cset] 
+    (:require (llama [state :as state])
               [Hafni.swing.dialog :as file]
               (seesaw [core :as ssw]
                       [chooser :as ssw-chooser])
@@ -10,7 +10,7 @@
 
 (let [tp (ssw/tabbed-panel :overflow :scroll)
       tabbed_pane tp
-      docs (atom [])]
+      docs (atom [])] 
 
   (def selected-index
     (ignore #(.getSelectedIndex tabbed_pane)))
@@ -83,6 +83,13 @@
     (>>> selected-index (fn [n] (swap! docs #(drop-n % n))) (hssw/input-arr tp :content)))
 
   (def editor-pane 
-    tabbed_pane))
+    tabbed_pane)
 
+  (state/defstate :editor-pane
+    (fn [] (map #(hash-map :title (:title %)
+                           :path (:path %)) @docs)))
+
+  (doseq [d (state/load-state :editor-pane)]
+    (open-file d))
+)
 
