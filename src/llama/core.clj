@@ -50,7 +50,7 @@
 
 (def project-menu-content
   [(comp-and-events (menu-item :text "New" :mnemonic \N :accelerator "ctrl shift N")
-                    :act project/create-new-project)
+                    :act project/create-and-load-new-project)
    (comp-and-events (menu-item :text "Open" :mnemonic \O :accelerator "ctrl shift O")
                     :act project/load-project-from-file)
    (ssw/action :name "test" :command \t)])

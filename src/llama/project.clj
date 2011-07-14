@@ -4,7 +4,8 @@
   (:require [llama.leiningen.new :as llama-new]
             (llama [editor :as editor]
                    [error :as error]
-                   [repl :as repl])
+                   [repl :as repl]
+                   [state :as state])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
                     [tree :as ssw-tree]
@@ -20,15 +21,19 @@
     (.setBackground p (ssw-color/color 255 255 255))
     p))
 
+(def current-projects (atom []))
+(add-watch current-projects nil (fn [_ _ _ items]
+                                  (ssw/config! project-pane :items (map #(vec [(::project-tree %) "span"]) items))))
+
 (defn run-project [project]
   {:pre [(contains? project ::project-thread)
-         (contains? project ::file-tree)]}
+         (contains? project ::project-tree)]}
   (if (contains? project :main)
     (let [a (::project-thread project)]
       (reset! a (Thread. 
                   (fn []
                     (let [d (ssw/custom-dialog 
-                              :parent (::file-tree project) :on-close :dispose :modal? true
+                              :parent (::project-tree project) :on-close :dispose :modal? true
                               :content (ssw/vertical-panel 
                                          :items [(ssw/label :text (str "Running project " (:name project) ".")
                                                             :border 10)
@@ -40,7 +45,7 @@
                       (if (.isAlive t) (.interrupt t))))))
       (.start @a))
     (error/show-error "no main in project" 
-                      :parent (::file-tree project))))
+                      :parent (::project-tree project))))
 
 (defn stop-project [project]
   {:pre [(contains? project ::project-thread)]}
@@ -79,7 +84,7 @@
 
 (defn create-new-project-tree [project]
   (let [tc (javax.swing.JTree. (create-file-tree-model (:target-dir project)))
-        project (assoc project ::file-tree tc)
+        project (assoc project ::project-tree tc)
         project_menu (create-project-menu project)]
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
@@ -108,16 +113,13 @@
                   ".java" (set-icon c "System-Java-icon.png")
                   nil))
               c))))
-    tc))
+    project))
 
-(def load-project
-  (>>> clone
-       (*** (hssw/output-arr project-pane :items)
-            (>>> 
-              #(assoc % ::project-thread (atom nil))
-              create-new-project-tree))
-       #(concat (first %) [[(second %) "span"]])
-       (hssw/input-arr project-pane :items)))
+(defn load-project [project]
+  (println "loading project:" project)
+  (swap! current-projects conj 
+         (-> (create-new-project-tree project) 
+             (assoc ::project-thread (atom nil)))))
 
 (def create-new-project
   (>>> (fn [& _]
@@ -125,15 +127,18 @@
        #(if %
           (llama-new/new-project (.getName %) (.getPath %)))))
 
-;(def create-and-load-new-project
-;  (>>> create-new-project
-;       load-project))
+(defn create-and-load-new-project [& _]
+  (when-let [f (ssw-chooser/choose-file)]
+    (llama-new/new-project (.getName f) (.getCanonicalPath f))
+    (load-project (lein-core/read-project (.getCanonicalPath (file f "project.clj"))))))
 
-(def load-project-from-file
-  (>>> (constantly [nil nil])
-       (||| (fn [& _] 
-              (ssw-chooser/choose-file))
-            (>>> first
-                 #(lein-core/read-project (.getCanonicalPath %))
-                 load-project))))
+(defn load-project-from-file [& _]
+  (if-let [f (ssw-chooser/choose-file)]
+    (-> (lein-core/read-project (.getCanonicalPath f))
+        load-project)))
+
+(state/defstate :project-pane (fn [] (map :target-dir @current-projects)))
+(state/load-state :project-pane
+  #(doseq [project %]
+     (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
 
