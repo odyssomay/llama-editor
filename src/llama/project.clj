@@ -116,7 +116,6 @@
     project))
 
 (defn load-project [project]
-  (println "loading project:" project)
   (swap! current-projects conj 
          (-> (create-new-project-tree project) 
              (assoc ::project-thread (atom nil)))))

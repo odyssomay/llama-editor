@@ -39,10 +39,8 @@
      (.setText "Paste")
      (.setAccelerator (seesaw.keystroke/keystroke "ctrl V")))
    :separator
-   (comp-and-events (menu-item :text "Undo" :accelerator "ctrl Z")
-                    :act editor/undo)
-   (comp-and-events (menu-item :text "Redo" :accelerator "ctrl R")
-                    :act editor/redo)])
+   (ssw/action :name "Undo" :key "ctrl Z" :handler editor/undo)
+   (ssw/action :name "Redo" :key "ctrl R" :handler editor/redo)])
 
 (def repl-menu-content
   [(comp-and-events (menu-item :text "New" :mnemonic \N)
@@ -52,8 +50,7 @@
   [(comp-and-events (menu-item :text "New" :mnemonic \N :accelerator "ctrl shift N")
                     :act project/create-and-load-new-project)
    (comp-and-events (menu-item :text "Open" :mnemonic \O :accelerator "ctrl shift O")
-                    :act project/load-project-from-file)
-   (ssw/action :name "test" :command \t)])
+                    :act project/load-project-from-file)])
 
 (defn -main []
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items (map component file-menu-content))
