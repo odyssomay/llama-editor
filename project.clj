@@ -10,4 +10,6 @@
                  [hafni-seesaw "1.0.3-SNAPSHOT"]
                  [clj-arrow "1.0.2-SNAPSHOT"]
                  [seesaw "1.0.7"]
-                 [leiningen "1.6.1"]])
+                 [leiningen "1.6.1"]
+                 [slamhound "1.1.1"]]
+  :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]])
