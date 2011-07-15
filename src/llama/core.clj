@@ -42,6 +42,10 @@
    (ssw/action :name "Undo" :key "ctrl Z" :handler editor/undo)
    (ssw/action :name "Redo" :key "ctrl R" :handler editor/redo)])
 
+(def code-menu-content
+  [(ssw/action :name "Reconstruct ns" :handler editor/reconstruct-ns)
+   (ssw/action :name "Insert proxy" :handler editor/insert-proxy)])
+
 (def repl-menu-content
   [(comp-and-events (menu-item :text "New" :mnemonic \N)
                     :act repl/create-new-anonymous-repl)])
@@ -55,6 +59,7 @@
 (defn -main []
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items (map component file-menu-content))
                                      (ssw/menu :text "Edit" :items (map component edit-menu-content))
+                                     (ssw/menu :text "Code" :items code-menu-content)
                                      (ssw/menu :text "Repl" :items (map component repl-menu-content))
                                      (ssw/menu :text "Project" :items (map component project-menu-content))])
         p1 (ssw/left-right-split (ssw/scrollable project/project-pane)

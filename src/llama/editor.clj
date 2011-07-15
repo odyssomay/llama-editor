@@ -1,6 +1,7 @@
 (ns llama.editor
     (:use clj-arrow.arrow
-          (llama document lib)
+          (llama document lib
+                 [code :only [slamhound-text proxy-dialog]])
           [clojure.java.io :only [file]])
     (:require (llama [state :as state])
               [Hafni.swing.dialog :as file]
@@ -15,11 +16,11 @@
   (def selected-index
     (ignore #(.getSelectedIndex tabbed_pane)))
 
-  (def current-tab
-    (>>> selected-index #(nth @docs %)))
+  (defn current-tab [& _]
+    (nth @docs (selected-index) nil))
 
-  (def current-component
-    (>>> selected-index #(:content (nth @docs %))))
+  (defn current-component [& _]
+    (:content (current-tab)))
 
   (def current-text
     (>>> current-tab :text-pane #(.getText %)))
@@ -81,6 +82,23 @@
   ;;argument is ignored
   (def remove-current-tab
     (>>> selected-index (fn [n] (swap! docs #(drop-nth % n))) (hssw/input-arr tp :content)))
+
+  (defn reconstruct-ns [& _]
+    (.start (Thread.
+              (fn [] 
+                (let [text_pane (:text-pane (current-tab))
+                      new_ns (slamhound-text (.getText text_pane))]
+                  (ssw/invoke-later 
+                    (.insertString (.getDocument text_pane)
+                                   0 new_ns nil)))))))
+
+  (defn insert-proxy [& _]
+    (let [text_pane (:text-pane (current-tab))
+          proxy_text (proxy-dialog)]
+      (println "proxy_text:")
+;      (ssw/invoke-later
+        (.insertString (.getDocument text_pane)
+                       (.getCaretPosition text_pane) "" nil)));)
 
   (def editor-pane 
     tabbed_pane)
