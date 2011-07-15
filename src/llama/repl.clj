@@ -8,6 +8,7 @@
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
             [seesaw.core :as ssw]
+            [hafni-seesaw.core :as hssw]
             llama.leiningen.repl
             (leiningen [core :as lein-core] 
                        [classpath :as lein-classpath]))
@@ -131,7 +132,7 @@
 
 (let [tabbed_pane (ssw/tabbed-panel :placement :right)
       current_repls (atom [])]
-  (add-watch current_repls nil (fn [_ _ _ items] (ssw/config! tabbed_pane :tabs items)))
+  (add-watch current_repls nil (fn [_ _ _ items] (hssw/config! tabbed_pane :content items)))
 
   (def selected-index 
     (fn [& _] (.getSelectedIndex tabbed_pane)))
@@ -149,7 +150,7 @@
          create-new-repl))
 
   (defn close-current-repl [& _]
-    (swap! current_repls #(drop-nth (.getSelectedIndex tabbed_pane) %)))
+    (swap! current_repls drop-nth (.getSelectedIndex tabbed_pane)))
 
   (def repl-pane tabbed_pane)
 
