@@ -1,13 +1,14 @@
 (ns llama.code
-  (:use [clojure.string :only (split)]
+  (:use [clojure.string :only (split join)]
         [slam.hound 
          [asplode :only [asplode]]
          [regrow :only [regrow]]
          [stitch :only [stitch-up]]])
   (:import (javax.swing JOptionPane)))
 
-(defn get-methods [& objects]
-  "Get the methods from a proxy that is created with objects."
+(defn get-proxy-methods  
+  "Get the methods from a proxy." 
+  [proxy]
   (remove #(case (first %)
 		 "__initClojureFnMappings" true
 		 "__updateClojureFnMappings" true
@@ -15,24 +16,37 @@
 		 false)
 	  (map (fn [x] [(.getName x)
 			(map #(.toString %) (.getParameterTypes x))])
-	       (.getMethods (apply get-proxy-class objects)))))
+	       (.getMethods (.getClass proxy)))))
+
+(defn arglist->string [arglist]
+  (str "["
+       (apply str
+              (join " "
+                    (map-indexed (fn [index item]
+                                   (str "^" (last (split item #" "))
+                                        " arg" index))
+                                 arglist)))
+       "]"))
+
+(defn method->string [method]
+  (str "(" (ffirst method) " "
+       (case (count method)
+         1 (arglist->string (last (first method)))
+         (apply str  
+                (for [arglist (map last method)]
+                  (str "\n(" (arglist->string arglist) ")"))))
+       ")\n"))
+
+(defn methods->string [methods]
+  (apply str
+         (map method->string (partition-by first methods))))
 
 (defn proxy-dialog []
   (let [objects (JOptionPane/showInputDialog "Input interfaces/abstract class/class")
-	methods (load-string (str "(get-methods " objects ")"))]
+	methods (load-string (str "(get-proxy-methods " objects ")"))]
     (str "(proxy [" objects "] []"
-	 (apply str
-		(map #(str "\n(" (first %) " ["
-			   (apply str (interleave
-				       (map (fn [x]
-					      (str "^" (last (split x #" "))))
-					    (second %))
-				       (repeat " par")
-				       (iterate inc 1)
-				       (repeat " ")))
-			   "] )")
-		     methods))
-	 ")")))
+         (methods->string methods)
+	 	 ")")))
 
 (defn slamhound-text [text]
   (-> (java.io.StringReader. text)

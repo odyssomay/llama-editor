@@ -1,2 +1,2 @@
-java -cp "src:classes:lib/*:lib/dev/*:resources/" lazytest.watch src test
+java -cp "src:test:lib/*:lib/dev/*:resources/" lazytest.watch src test
 
