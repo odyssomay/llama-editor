@@ -15,6 +15,7 @@
 
 (defn get-font []
   (font (first (filter #(case %
+                 "Lucida Console" true
                  "Liberation Mono" true
                  "Courier" true
                  "Courier new" true
@@ -50,11 +51,6 @@
                                              ))))]
     (.addUndoableEditListener jdoc listener)
     manager))
-
-(defn apply-edit [jdoc edit]
-  (if (string? (second edit))
-      (.insertString jdoc (first edit) (second edit) nil)
-      (.remove jdoc (first edit) (second edit))))
 
 (defn in-string? [text]
   (odd? (count (filter (partial = \") text))))
