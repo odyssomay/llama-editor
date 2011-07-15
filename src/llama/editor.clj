@@ -80,7 +80,7 @@
 
   ;;argument is ignored
   (def remove-current-tab
-    (>>> selected-index (fn [n] (swap! docs #(drop-n % n))) (hssw/input-arr tp :content)))
+    (>>> selected-index (fn [n] (swap! docs #(drop-nth % n))) (hssw/input-arr tp :content)))
 
   (def editor-pane 
     tabbed_pane)

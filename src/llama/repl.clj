@@ -1,16 +1,16 @@
 (ns llama.repl
   (:use (llama [document :only [create-doc]]
                [syntax :only [parens-count]]
-               [lib :only [start-process]]
+               [lib :only [start-process drop-nth]]
+               [state :only [defstate load-state]]
                 )
         clj-arrow.arrow
-        (Hafni.swing component container)
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
             [seesaw.core :as ssw]
             llama.leiningen.repl
-            (leiningen [classpath :as lein-classpath])
-            (Hafni [utils :as hutil]))
+            (leiningen [core :as lein-core] 
+                       [classpath :as lein-classpath]))
   (:import 
     (javax.swing JTextArea)
     (java.awt.event KeyEvent KeyListener)))
@@ -49,7 +49,7 @@
   (.flush (:output_stream repl)))
 
 (defn init-repl-input-field [repl repl_pane]
-  (let [input_field (:text-pane (create-doc {}))
+  (let [input_field (:text-pane (create-doc {:type "clj"}))
         jdoc (.getDocument repl_pane) 
         reset-text? (atom false)]
     (.addKeyListener
@@ -94,7 +94,7 @@
 
 (defn init-new-repl [project]
   (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
-        jtext_pane (:text-pane (create-doc {}))
+        jtext_pane (:text-pane (create-doc {:type "clj"}))
         err_text (javax.swing.JTextArea.) 
         input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))
@@ -125,38 +125,37 @@
 
     (.setEditable jtext_pane false)
     (.setEditable err_text false)
-    {:content panel  
+    {:content panel
+     :path (:target-dir project)
      :title (:name project)}))
 
-(let [tabbed_pane (tabbed-pane :tab_placement "right")]
+(let [tabbed_pane (ssw/tabbed-panel :placement :right)
+      current_repls (atom [])]
+  (add-watch current_repls nil (fn [_ _ _ items] (ssw/config! tabbed_pane :tabs items)))
+
   (def selected-index 
-    (fn [& _] (.getSelectedIndex (component tabbed_pane))))
+    (fn [& _] (.getSelectedIndex tabbed_pane)))
 
-  (def current-repl
-    (>>> (&&& (output-arr tabbed_pane :content)
-              selected-index)
-         (fn [[coll index]]
-           (nth coll index))))
+  (defn current-repl [& _]
+    (nth @current_repls (.getSelectedIndex tabbed_pane) nil))
 
-  (def create-new-repl
-    (>>> (&&& (output-arr tabbed_pane :content)
-              init-new-repl)
-         (fn [[items new_repl]] 
-           ((input-arr tabbed_pane :content) (conj items new_repl))
-           (.setSelectedComponent (component tabbed_pane) (:content new_repl)))))
+  (defn create-new-repl [project]
+    (let [tab (init-new-repl project)]
+      (swap! current_repls conj tab)
+      (.setSelectedComponent tabbed_pane (:content tab)))) 
 
   (def create-new-anonymous-repl
     (>>> (constantly {:name "anonymous" ::anonymous true})
          create-new-repl))
 
-  (def close-current-repl
-    (>>>
-      (&&&
-        (output-arr tabbed_pane :content)
-        selected-index)
-      (fn [[coll index]]
-        (hutil/drop-nth index coll))
-      (input-arr tabbed_pane :content)))
+  (defn close-current-repl [& _]
+    (swap! current_repls #(drop-nth (.getSelectedIndex tabbed_pane) %)))
 
-  (def repl-pane
-    (component tabbed_pane)))
+  (def repl-pane tabbed_pane)
+
+  (defstate :repl-pane #(map :path @current_repls))
+  (load-state :repl-pane (fn [paths]
+                           (doseq [project (map (comp lein-core/read-project #(.getCanonicalPath (cio/file % "project.clj")))
+                                                paths)]
+                                  (create-new-repl project))))
+)

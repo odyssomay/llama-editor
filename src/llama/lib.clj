@@ -2,7 +2,7 @@
   (:import (java.io OutputStreamWriter InputStreamReader)
 	   (javax.swing JTabbedPane)))
 
-(defn drop-n [coll n]
+(defn drop-nth [coll n]
   "Drop (remove) the n item in coll."
   (concat (take n coll) (drop (inc n) coll)))
 

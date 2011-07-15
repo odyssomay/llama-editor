@@ -94,8 +94,8 @@
           (swap! old_h (constantly h)))))))
 
 (defmulti create-doc (fn [file]
-                       (if (:filetype file)
-                         (:filetype file)
+                       (if (:type file)
+                         (:type file)
                          (if (:path file)
                            (last (split (:path file) #"\."))))))
 
