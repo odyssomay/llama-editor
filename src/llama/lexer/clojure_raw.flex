@@ -14,13 +14,6 @@ import llama.lexer.Token;
 %type Token[]
 
 %{
-/*
-int parensCount;
-int line;
-int column;
-int offset;
-int length;
-*/
 
 public ClojureLexer() {}
 
@@ -70,6 +63,7 @@ Number = -?[0-9\.]+M?
 Ratio = -?[0-9]+\/[0-9]+
 ArbitraryBaseNumber = -?[0-3]?[0-9]{1}r[0-9a-zA-Z]+
 OctalNumber = 0x[0-9a-fA-F]+
+ANumber = {Separator}({Number}|{Ratio}|{ArbitraryBaseNumber}|{OctalNumber}){Separator}
 
 String = \"([^\"]|\\\")*\"
 
@@ -100,26 +94,17 @@ return ret;
 
 {StandardComment} { return token("COMMENT"); }
 
-/*
-{FormComment} 
+{ANumber}
 { 
-for (int i = 0; i < yylength(); i++) {
-	if (currentParensCount(0, i) == 0) {
-//		yypushback(yylength() - i);	
-//		return token("COMMENT", yyline, yycolumn, yychar, i + 1);
-	}
-//yypushback(yylength() - 1); // fallback
-return token("COMMENT");
-
+Token[] ret = {
+	singleToken("SEPARATOR", yyline, yycolumn, yychar, 1) ,
+	singleToken("NUMBER", yyline, yycolumn + 1, yychar + 1, yylength() - 1)
+};
+yypushback(1);
+return ret;
 }
-}
-*/
-	
 
-{Number} |
-{Ratio} |
-{ArbitraryBaseNumber} |
-{OctalNumber} { return token("NUMBER"); }
+return token("NUMBER"); }
 
 [ \(\[\{]:{1,2}[^\r\n \(\)\[\]\{\}:]{Identifier}+ 
 { 
@@ -140,26 +125,5 @@ return token("NEW-CLASS");
 {Separator} { return token("SEPARATOR"); }
 
 }
-
-/*
-<COMMENT> {
-
-"(" { 
-length += 1;
-parensCount += 1; 
-}
-
-")" {
-length += 1; 
-parensCount -= 1;
-if (parensCount == 0) {
-	return token("COMMENT", line, column, offset length);
-}
-}
-
-. { length += 1; }
-
-}
-*/
 
 .|\n { return token("DEFAULT"); }

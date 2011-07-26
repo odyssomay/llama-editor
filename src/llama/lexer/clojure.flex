@@ -70,6 +70,7 @@ Number = -?[0-9\.]+M?
 Ratio = -?[0-9]+\/[0-9]+
 ArbitraryBaseNumber = -?[0-3]?[0-9]{1}r[0-9a-zA-Z]+
 OctalNumber = 0x[0-9a-fA-F]+
+ANumber = {Separator}({Number}|{Ratio}|{ArbitraryBaseNumber}|{OctalNumber}){Separator}
 
 String = \"([^\"]|\\\")*\"
 
@@ -672,12 +673,24 @@ return token("COMMENT");
 }
 }
 */
-	
 
-{Number} |
-{Ratio} |
-{ArbitraryBaseNumber} |
-{OctalNumber} { return token("NUMBER"); }
+/*	
+{Separator}
+({Number} | {Ratio} | {ArbitraryBaseNumber} | {OctalNumber})
+{Separator} 
+*/
+
+{ANumber}
+{ 
+Token[] ret = {
+	singleToken("SEPARATOR", yyline, yycolumn, yychar, 1) ,
+	singleToken("NUMBER", yyline, yycolumn + 1, yychar + 1, yylength() - 1)
+};
+yypushback(1);
+return ret;
+}
+
+return token("NUMBER"); }
 
 [ \(\[\{]:{1,2}[^\r\n \(\)\[\]\{\}:]{Identifier}+ 
 { 
@@ -690,7 +703,10 @@ return ret;
 
 {String} { return token("STRING"); }
 
-{NewClass} { return token("NEW-CLASS"); }
+{NewClass} { 
+yypushback(1);
+return token("NEW-CLASS"); 
+}
 
 {Separator} { return token("SEPARATOR"); }
 
