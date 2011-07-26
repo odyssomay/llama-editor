@@ -5,7 +5,6 @@
   :resources-path "resources"
   :aot [llama.lexer.Token]
   :dependencies [[org.clojure/clojure "1.2.1"]
-                 [org.clojure/tools.logging "0.1.2"]
                  [hafni "1.0.6-SNAPSHOT"]
                  [hafni-seesaw "1.0.3-SNAPSHOT"]
                  [clj-arrow "1.0.2-SNAPSHOT"]

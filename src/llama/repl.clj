@@ -2,8 +2,7 @@
   (:use (llama [document :only [create-doc]]
                [syntax :only [parens-count]]
                [lib :only [start-process drop-nth]]
-               [state :only [defstate load-state]]
-                )
+               [state :only [defstate load-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
