@@ -4,7 +4,7 @@ llama-editor is a (relatively) lightweight editor/IDE for the clojure language.
 ## Installation
 
 1. Download the [jar](https://github.com/downloads/odyssomay/llama-editor/llama-1.0.0-SNAPSHOT-standalone.jar)
-2. It might be possible to simply double-click the file. If that doesn't work however, open a terminal, 
+2. It might be possible to simply double-click the file. If that doesn't work however, open a terminal,<br/> 
    move to the download directory and enter `java -jar llama-1.0.0-SNAPSHOT-standalone.jar`
 
 ## Usage
@@ -17,7 +17,7 @@ There are two ways to access the features:
 
 ## License 
 
-Everything in src/org is under LGPL license, see [http://fifesoft.com/rsyntaxtextarea/]
+Everything in src/org is under LGPL license, see http://fifesoft.com/rsyntaxtextarea/
 
 The rest is licensed under the zlib license:
 
