@@ -5,13 +5,14 @@
         (Hafni.swing
           [utils :only [*available-fonts* color font]])
         [clojure.string :only [split]]
-        [seesaw.invoke :only [invoke-later]]
+        [seesaw.invoke :only [invoke-later invoke-now]]
         clj-arrow.arrow
         [clj-diff.core :only [diff]])
   (:require [hafni-seesaw.core :as hssw]
             [seesaw.core :as ssw])
   (:import javax.swing.text.AbstractDocument$DefaultDocumentEvent
-           javax.swing.event.DocumentEvent$EventType))
+           javax.swing.event.DocumentEvent$EventType
+           java.awt.RenderingHints))
 
 (defn get-font []
   (font (first (filter #(case %
@@ -77,24 +78,24 @@
           (swap! old_h (constantly h)))))))
 )
 
+(comment
 (defn create-highlight-fn [jtext_pane]
   (let [old_h (atom ())]
     (fn [& _]
-      (invoke-later
-        (let [h (clj-highlight (.getText jtext_pane))
-              new_h (apply concat (map rest (:+ (diff @old_h h))))]
-;          (println "Highlighting " (count new_h) " tokens")
-;          (println "Total tokens is " (count h))
-          (dorun (map (hssw/input-arr jtext_pane :style)
-                      new_h))
-          (swap! old_h (constantly h)))))))
+            (let [h (clj-highlight (.getText jtext_pane))
+                  new_h (apply concat (map rest (:+ (diff @old_h h))))]
+              ;          (println "Highlighting " (count new_h) " tokens")
+              ;          (println "Total tokens is " (count h))
+              (invoke-now 
+                (dorun (map (hssw/input-arr jtext_pane :style)
+                            new_h)))
+              (swap! old_h (constantly h))))))
 
 (defmulti create-doc (fn [file]
                        (if (:type file)
                          (:type file)
                          (if (:path file)
                            (last (split (:path file) #"\."))))))
-
 (defmethod create-doc "clj" [file]
   (let [text (if (:path file) (slurp (:path file)) "")
         jtext_pane (javax.swing.JTextPane.)
@@ -116,6 +117,88 @@
     (assoc file :content (ssw/scrollable jtext_pane) 
                 :text-pane jtext_pane
                 :manager manager)))
+)
+
+
+
+(defmacro syntax-style [style]
+  (symbol (str "org.fife.ui.rsyntaxtextarea.SyntaxConstants/SYNTAX_STYLE_" style)))
+
+(defn type->syntax-style [type]
+  (case type
+    "clj" (syntax-style "CLOJURE")
+    "java" (syntax-style "JAVA")
+    nil))
+
+(defn set-syntax-style [area type]
+  (.setSyntaxEditingStyle area (type->syntax-style type)))
+
+(defn create-clojure-document []
+  (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument] [nil]
+    (insertString [offset text a]
+      (let [indented_text 
+            (if (= text "\n")
+              (indent (.getText this 0 offset))
+              text)]
+        (proxy-super insertString offset indented_text a)))))
+
+(defn create-text-area [file]
+  (let [text (if (:path file) (slurp (:path file)) "")
+        type (cond (:type file) (:type file)
+                   (:path file) (last (split (:path file) #"\."))
+                   true nil)
+        document (if (= type "clj") (create-clojure-document) (org.fife.ui.rsyntaxtextarea.RSyntaxDocument. nil))
+        area (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxTextArea] [document]
+               (insert [string pos]
+                 (println "inserted: " string)
+                 (proxy-super insert string pos))
+               (paintComponent [g]
+                 (doto g 
+                   (.setRenderingHint RenderingHints/KEY_ANTIALIASING 
+                                      RenderingHints/VALUE_ANTIALIAS_ON)
+                   (.setRenderingHint RenderingHints/KEY_TEXT_ANTIALIASING 
+                                      RenderingHints/VALUE_TEXT_ANTIALIAS_ON)
+                   (.setRenderingHint RenderingHints/KEY_RENDERING
+                                      RenderingHints/VALUE_RENDER_QUALITY))
+                 (proxy-super paintComponent g)))
+        content (ssw/scrollable area)
+        manager (init-undoable-edits (.getDocument area))]
+    (if (= type "clj")
+      (.setAutoIndentEnabled area false))
+    (set-syntax-style area type) 
+    (.setFont area (get-font))
+    (.setText area text)
+    (ssw/listen area :mouse-entered 
+                (fn [_] (if (.isEditable area)
+                          (.requestFocusInWindow area))))
+    (assoc file :content content
+                :text-pane area
+                :manager manager)))
+
+(comment 
+(defmethod create-doc "clj" [file]
+  (let [text (if (:path file) (slurp (:path file)) "")
+        area (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxTextArea] []
+               (paintComponent [g]
+                 (doto g 
+                   (.setRenderingHint RenderingHints/KEY_ANTIALIASING 
+                                      RenderingHints/VALUE_ANTIALIAS_ON)
+                   (.setRenderingHint RenderingHints/KEY_TEXT_ANTIALIASING 
+                                      RenderingHints/VALUE_TEXT_ANTIALIAS_ON)
+                   (.setRenderingHint RenderingHints/KEY_RENDERING
+                                      RenderingHints/VALUE_RENDER_QUALITY))
+                 (proxy-super paintComponent g)))
+        content (ssw/scrollable area)
+        manager (init-undoable-edits (.getDocument area))]
+    (.setSyntaxEditingStyle area (org.fife.ui.rsyntaxtextarea.SyntaxConstants/SYNTAX_STYLE_CLOJURE))
+    (.setFont area (get-font))
+    (.setText area text)
+    (ssw/listen area :mouse-entered 
+                (fn [_] (if (.isEditable area)
+                          (.requestFocusInWindow area))))
+    (assoc file :content content
+                :text-pane area
+                :manager manager)))
 
 (defmethod create-doc :default [file]
   (let [text (if (:path file) (slurp (:path file)) "")
@@ -125,4 +208,4 @@
     (assoc file :content (ssw/scrollable jtext)
                 :text-pane jtext
                 :manager manager)))
-
+)

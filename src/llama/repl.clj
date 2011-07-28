@@ -1,5 +1,5 @@
 (ns llama.repl
-  (:use (llama [document :only [create-doc]]
+  (:use (llama [document :only [create-text-area]]
                [syntax :only [parens-count]]
                [lib :only [start-process drop-nth]]
                [state :only [defstate load-state]])
@@ -49,7 +49,7 @@
   (.flush (:output_stream repl)))
 
 (defn init-repl-input-field [repl repl_pane]
-  (let [input_field (:text-pane (create-doc {:type "clj"}))
+  (let [input_field (:text-pane (create-text-area {:type "clj"}))
         jdoc (.getDocument repl_pane) 
         reset-text? (atom false)]
     (.addKeyListener
@@ -94,7 +94,7 @@
 
 (defn init-new-repl [project]
   (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
-        jtext_pane (:text-pane (create-doc {:type "clj"}))
+        jtext_pane (:text-pane (create-text-area {:type "clj"}))
         err_text (javax.swing.JTextArea.) 
         input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))

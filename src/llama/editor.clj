@@ -30,7 +30,7 @@
     (>>> clone
          (||| #(find-i (:path %) (map :path @docs))
               (>>> first #(.setSelectedIndex tabbed_pane %))
-              (snd (>>> create-doc #(swap! docs conj %) (hssw/input-arr tp :content))))))
+              (snd (>>> create-text-area #(swap! docs conj %) (hssw/input-arr tp :content))))))
 
   ;; argument is ignored
   (def open-and-choose-file
