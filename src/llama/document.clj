@@ -1,14 +1,14 @@
 (ns llama.document
   (:use (llama 
           [syntax :only [indent]] 
-          [highlight :only [clj-highlight]])
-        (Hafni.swing
-          [utils :only [*available-fonts* color font]])
+          [highlight :only [clj-highlight]]
+          [lib :only [*available-fonts* color font]])
         [clojure.string :only [split]]
         [seesaw.invoke :only [invoke-later invoke-now]]
         clj-arrow.arrow
-        [clj-diff.core :only [diff]])
-  (:require [hafni-seesaw.core :as hssw]
+        ;[clj-diff.core :only [diff]]
+        )
+  (:require ;[hafni-seesaw.core :as hssw]
             [seesaw.core :as ssw])
   (:import javax.swing.text.AbstractDocument$DefaultDocumentEvent
            javax.swing.event.DocumentEvent$EventType

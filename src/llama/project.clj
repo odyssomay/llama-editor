@@ -11,7 +11,6 @@
                     [tree :as ssw-tree]
                     [color :as ssw-color]
                     [chooser :as ssw-chooser])
-            [hafni-seesaw.core :as hssw]
             (leiningen [core :as lein-core]
                        [run :as lein-run]
                        [deps :as lein-deps])))

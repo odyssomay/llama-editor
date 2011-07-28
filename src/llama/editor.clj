@@ -4,14 +4,17 @@
                  [code :only [slamhound-text proxy-dialog]])
           [clojure.java.io :only [file]])
     (:require (llama [state :as state])
-              [Hafni.swing.dialog :as file]
               (seesaw [core :as ssw]
-                      [chooser :as ssw-chooser])
-              [hafni-seesaw.core :as hssw]))
+                      [chooser :as ssw-chooser])))
 
 (let [tp (ssw/tabbed-panel :overflow :scroll)
       tabbed_pane tp
       docs (atom [])] 
+
+  (add-watch docs nil
+    (fn [_ _ _ items]
+      (.removeAll tp)
+      (ssw/config! tp :tabs items)))
 
   (def selected-index
     (ignore #(.getSelectedIndex tabbed_pane)))
@@ -30,7 +33,9 @@
     (>>> clone
          (||| #(find-i (:path %) (map :path @docs))
               (>>> first #(.setSelectedIndex tabbed_pane %))
-              (snd (>>> create-text-area #(swap! docs conj %) (hssw/input-arr tp :content))))))
+              (snd (>>> create-text-area #(swap! docs conj %) 
+                        ;(hssw/input-arr tp :content)
+                        )))))
 
   ;; argument is ignored
   (def open-and-choose-file
@@ -58,8 +63,7 @@
                    (>>> (snd selected-index)
                         (fn [[path index]] 
                           (swap! docs (fn [coll]
-                                        (change-i index #(assoc % :path path :title (.getName (file path))) coll))))
-                        (hssw/input-arr tp :content))))))
+                                        (change-i index #(assoc % :path path :title (.getName (file path))) coll)))))))))
 
   ;; argument is ignored
   (def save
@@ -81,7 +85,7 @@
 
   ;;argument is ignored
   (def remove-current-tab
-    (>>> selected-index (fn [n] (swap! docs #(drop-nth % n))) (hssw/input-arr tp :content)))
+    (>>> selected-index (fn [n] (swap! docs #(drop-nth % n)))))
 
   (defn reconstruct-ns [& _]
     (.start (Thread.

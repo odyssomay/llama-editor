@@ -1,7 +1,5 @@
 (ns llama.core
-  (:gen-class)
   (:use clj-arrow.arrow
-        (Hafni.swing action component menu view)
         [clojure.java.io :only [file]])
   (:require (seesaw [core :as ssw]
                     [invoke :as ssw-invoke])
@@ -15,18 +13,18 @@
            (javax.swing JMenuItem)))
 
 (def file-menu-content 
-  [(comp-and-events (menu-item :text "New" :desc "Create a new file" :mnemonic \n :accelerator "ctrl N")
-                    :act editor/new-file)
-   (comp-and-events (menu-item :text "Open" :desc "Open an existing file" :mnemonic \O :accelerator "ctrl O")
-                    :act editor/open-and-choose-file)
+  [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "ctrl N"
+               :handler editor/new-file)
+   (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "ctrl O"
+               :handler editor/open-and-choose-file)
    :separator
-   (comp-and-events (menu-item :text "Save" :mnemonic \S :accelerator "ctrl S")
-                    :act editor/save)
-   (comp-and-events (menu-item :text "Save As" :mnemonic \A :accelerator "ctrl shift S")
-                    :act editor/save-as)
+   (ssw/action :name "Save" :mnemonic \S :key "ctrl S"
+               :handler editor/save)
+   (ssw/action :name "Save As" :mnemonic \A :key "ctrl shift S"
+               :handler editor/save-as)
    :separator
-   (comp-and-events (menu-item :text "Close" :desc "Close the current tab" :mnemonic \C :accelerator "ctrl W")
-                    :act editor/remove-current-tab)])
+   (ssw/action :name "Close" :tip "Close the current tab" :mnemonic \C :key "ctrl W"
+               :handler editor/remove-current-tab)])
 
 (def edit-menu-content
   [(doto (JMenuItem. (DefaultEditorKit$CutAction.))
@@ -47,21 +45,21 @@
    (ssw/action :name "Insert proxy" :handler editor/insert-proxy)])
 
 (def repl-menu-content
-  [(comp-and-events (menu-item :text "New" :mnemonic \N)
-                    :act repl/create-new-anonymous-repl)])
+  [(ssw/action :name "New" :mnemonic \N
+               :handler repl/create-new-anonymous-repl)])
 
 (def project-menu-content
-  [(comp-and-events (menu-item :text "New" :mnemonic \N :accelerator "ctrl shift N")
-                    :act project/create-and-load-new-project)
-   (comp-and-events (menu-item :text "Open" :mnemonic \O :accelerator "ctrl shift O")
-                    :act project/load-project-from-file)])
+  [(ssw/action :name "New" :mnemonic \N :key "ctrl shift N"
+               :handler project/create-and-load-new-project)
+   (ssw/action :name "Open" :mnemonic \O :key "ctrl shift O"
+               :handler project/load-project-from-file)])
 
-(defn -main []
-  (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items (map component file-menu-content))
-                                     (ssw/menu :text "Edit" :items (map component edit-menu-content))
+(defn llama-editor []
+  (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
+                                     (ssw/menu :text "Edit" :items edit-menu-content)
                                      (ssw/menu :text "Code" :items code-menu-content)
-                                     (ssw/menu :text "Repl" :items (map component repl-menu-content))
-                                     (ssw/menu :text "Project" :items (map component project-menu-content))])
+                                     (ssw/menu :text "Repl" :items repl-menu-content)
+                                     (ssw/menu :text "Project" :items project-menu-content)])
         p1 (ssw/left-right-split (ssw/scrollable project/project-pane)
                                     editor/editor-pane)
         p2 (ssw/top-bottom-split p1 repl/repl-pane)
