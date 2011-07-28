@@ -11,5 +11,4 @@
                  [seesaw "1.0.7"]
                  [leiningen "1.6.1"]
                  [slamhound "1.1.1"]]
-  :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]]
-  :jar-exclusions [#".*(beans|state)/[^\.].*"])
+  :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]])
