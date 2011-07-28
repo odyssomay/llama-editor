@@ -1,12 +1,14 @@
 (ns llama.main
   (:gen-class)
   (:use llama.lib)
-  (:import (java.io InputStreamReader OutputStreamWriter)))
+  (:import (java.io IOException InputStreamReader OutputStreamWriter)))
 
 (defn copy [input output]
   (-> (fn []
-        (.write output (.read input))
-        (recur))
+        (try 
+          (.write output (.read input))
+          (recur)
+          (catch IOException _ )))
       (Thread.)
       .start))
 
