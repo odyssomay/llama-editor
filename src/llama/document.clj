@@ -119,7 +119,34 @@
                 :manager manager)))
 )
 
+(def clojure-provider (org.fife.ui.autocomplete.DefaultCompletionProvider.))
 
+(defmacro core-symbols+metadata []
+  (let [symbols (keys (ns-publics 'clojure.core))]
+    (vec
+      (for [s symbols]
+        `(vec ['~s (meta (var ~s))])))))
+
+(defn to-html [string]
+  (if (string? string)
+    (-> string
+      (.replaceAll "<" "<&lt;>")
+      (.replaceAll ">" "<&gt;>")
+      (.replaceAll "\n" "<br/>"))
+    string))
+
+(defn init-clojure-completion-provider []
+  (doseq [completion (for [[s m] (core-symbols+metadata)]
+                       (let [c (org.fife.ui.autocomplete.FunctionCompletion.
+                                 clojure-provider (str s) (str (:arglists m)))]
+                         (.setShortDescription c (str "<html>" (to-html (:doc m))))
+                         c))]
+    (.addCompletion clojure-provider completion)))
+
+(init-clojure-completion-provider)
+
+(.addCompletion clojure-provider
+  (org.fife.ui.autocomplete.BasicCompletion. clojure-provider "def"))
 
 (defmacro syntax-style [style]
   (symbol (str "org.fife.ui.rsyntaxtextarea.SyntaxConstants/SYNTAX_STYLE_" style)))
@@ -149,9 +176,6 @@
                    true nil)
         document (if (= type "clj") (create-clojure-document) (org.fife.ui.rsyntaxtextarea.RSyntaxDocument. nil))
         area (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxTextArea] [document]
-               (insert [string pos]
-                 (println "inserted: " string)
-                 (proxy-super insert string pos))
                (paintComponent [g]
                  (doto g 
                    (.setRenderingHint RenderingHints/KEY_ANTIALIASING 
@@ -163,8 +187,11 @@
                  (proxy-super paintComponent g)))
         content (ssw/scrollable area)
         manager (init-undoable-edits (.getDocument area))]
-    (if (= type "clj")
-      (.setAutoIndentEnabled area false))
+    (when (= type "clj")
+      (.setAutoIndentEnabled area false)
+      (let [ac (org.fife.ui.autocomplete.AutoCompletion. clojure-provider)]
+        (.setShowDescWindow ac true)
+        (.install ac area)))
     (set-syntax-style area type) 
     (.setFont area (get-font))
     (.setText area text)
