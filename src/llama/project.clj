@@ -85,20 +85,37 @@
 (defn create-new-project-tree [project]
   (let [tc (javax.swing.JTree. (create-file-tree-model (:target-dir project)))
         project (assoc project ::project-tree tc)
-        project_menu (create-project-menu project)]
+        project_menu (create-project-menu project)
+        update_tree (fn [& _] 
+                      (let [visible_paths (doall
+                                            (for [row (range (.getRowCount tc))]
+                                              (.getPathForRow tc row)))]
+                        (.setModel tc (create-file-tree-model (:target-dir project)))
+                        (doseq [path visible_paths]
+                          (.makeVisible tc path))))]
     (ssw/config! tc :popup (fn [e] 
                              (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
                                (let [path (->> raw_path
                                             .getPath
                                             (map #(.getName (:file %))))
                                      selected_file (apply file (cons (:target-dir project) (rest path)))]
-                                 (concat 
+                                 (concat
+                                   (if (.isDirectory selected_file)
+                                     [(ssw/action :name "new file"
+                                                  :handler (fn [_]
+                                                             (when-let [name (ssw/input "filename")]
+                                                               (.createNewFile (file selected_file name))
+                                                               (update_tree))))])
                                    (cond 
                                      (not (.isDirectory selected_file))
                                      [(ssw/action :name "open file" 
                                                   :handler (fn [_]
                                                              (editor/open-file {:path (.getCanonicalPath selected_file)
                                                                                 :title (last path)})))
+                                      (ssw/action :name "remove file"
+                                                  :handler (fn [_]
+                                                             (.delete selected_file)
+                                                             (update_tree)))
                                       :separator]
                                      :else [])
                                    project_menu)))))
