@@ -58,7 +58,7 @@
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
                                      (ssw/menu :text "Edit" :items edit-menu-content)
                                      (ssw/menu :text "Code" :items code-menu-content)
-                                     (ssw/menu :text "Repl" :items repl-menu-content)
+                                     ;(ssw/menu :text "Repl" :items repl-menu-content)
                                      (ssw/menu :text "Project" :items project-menu-content)])
         p1 (ssw/left-right-split (ssw/scrollable project/project-pane)
                                     editor/editor-pane)
