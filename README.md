@@ -9,11 +9,12 @@ llama-editor is a (relatively) lightweight editor/IDE for the clojure language.
 
 ## Usage
 
-There are two ways to access the features:
+There are mainly two ways to access the features:
 
 1. Through the menu.
 2. By right-clicking a project tree.
-3. An exception is code completion, which is activated by pressing `ctrl+space`.
+
+An exception is code completion, which is activated by pressing `ctrl+space`.
 
 ## License 
 
