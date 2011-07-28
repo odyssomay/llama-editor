@@ -7,7 +7,6 @@
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
             [seesaw.core :as ssw]
-            [hafni-seesaw.core :as hssw]
             llama.leiningen.repl
             (leiningen [core :as lein-core] 
                        [classpath :as lein-classpath]))
@@ -19,8 +18,20 @@
   (let [classpath (if (::anonymous project)
                     (.getPath (ClassLoader/getSystemResource "clojure-1.2.1.jar"))
                     (lein-classpath/get-classpath-string project))
-        repl_path (.getPath (ClassLoader/getSystemResource "repl.clj"))]
-    (start-process (str "java -cp " classpath " clojure.main " repl_path))))
+        repl_url (ClassLoader/getSystemResource "repl.clj")
+        repl_source 
+        (apply str
+               (with-open [s (cio/reader (.openStream repl_url))]
+                 (let [f (fn this []
+                           (if (.ready s)
+                             (cons (char (.read s)) (this))
+                             '()))]
+                   (f))))
+        process (start-process (str "java -cp " classpath " clojure.main -"))]
+    (doto (:output_stream process)
+      (.write repl_source)
+      .flush)
+    process))
 
 (defn stop-repl [{:keys [process input_stream output_stream]}]
 ;  (.interrupt thread)
@@ -131,10 +142,11 @@
 
 (let [tabbed_pane (ssw/tabbed-panel :placement :right)
       current_repls (atom [])]
-  (add-watch current_repls nil (fn [_ _ _ items] (hssw/config! tabbed_pane :content items)))
+  (add-watch current_repls nil (fn [_ _ _ items] 
+                                 (.removeAll tabbed_pane)
+                                 (ssw/config! tabbed_pane :tabs items)))
 
-  (def selected-index 
-    (fn [& _] (.getSelectedIndex tabbed_pane)))
+  (defn selected-index [& _] (.getSelectedIndex tabbed_pane))
 
   (defn current-repl [& _]
     (nth @current_repls (.getSelectedIndex tabbed_pane) nil))
@@ -142,11 +154,10 @@
   (defn create-new-repl [project]
     (let [tab (init-new-repl project)]
       (swap! current_repls conj tab)
-      (.setSelectedComponent tabbed_pane (:content tab)))) 
+      (.setSelectedComponent tabbed_pane (:content tab))))
 
-  (def create-new-anonymous-repl
-    (>>> (constantly {:name "anonymous" ::anonymous true})
-         create-new-repl))
+  (defn create-new-anonymous-repl [& _]
+    (create-new-repl {:name "anonymous" ::anonymous true}))
 
   (defn close-current-repl [& _]
     (swap! current_repls drop-nth (.getSelectedIndex tabbed_pane)))
