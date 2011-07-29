@@ -4,6 +4,7 @@
   :main llama.main
   :resources-path "resources"
   :aot [llama.lexer.Token]
+  :manifest ["SplashScreen-Image" "llama-splash.gif"]
   :dependencies [[org.clojure/clojure "1.2.1"]
                  [clj-arrow "1.0.3-SNAPSHOT"]
                  [seesaw "1.0.10"]
