@@ -13,32 +13,26 @@
            (javax.swing JMenuItem)))
 
 (def file-menu-content 
-  [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "ctrl N"
+  [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "menu N"
                :handler editor/new-file)
-   (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "ctrl O"
+   (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "menu O"
                :handler editor/open-and-choose-file)
    :separator
-   (ssw/action :name "Save" :mnemonic \S :key "ctrl S"
+   (ssw/action :name "Save" :mnemonic \S :key "menu S"
                :handler editor/save)
-   (ssw/action :name "Save As" :mnemonic \A :key "ctrl shift S"
+   (ssw/action :name "Save As" :mnemonic \A :key "menu shift S"
                :handler editor/save-as)
    :separator
-   (ssw/action :name "Close" :tip "Close the current tab" :mnemonic \C :key "ctrl W"
+   (ssw/action :name "Close" :tip "Close the current tab" :mnemonic \C :key "menu W"
                :handler editor/remove-current-tab)])
 
 (def edit-menu-content
-  [(doto (JMenuItem. (DefaultEditorKit$CutAction.))
-     (.setText "Cut")
-     (.setAccelerator (seesaw.keystroke/keystroke "ctrl X")))
-   (doto (JMenuItem. (DefaultEditorKit$CopyAction.))
-     (.setText "Copy")
-     (.setAccelerator (seesaw.keystroke/keystroke "ctrl C")))
-   (doto (JMenuItem. (DefaultEditorKit$PasteAction.))
-     (.setText "Paste")
-     (.setAccelerator (seesaw.keystroke/keystroke "ctrl V")))
+  [(ssw/menu-item :action (DefaultEditorKit$CutAction.) :text "Cut" :key "menu X")
+   (ssw/menu-item :action (DefaultEditorKit$CopyAction.) :text "Copy" :key "menu C")
+   (ssw/menu-item :action (DefaultEditorKit$PasteAction.) :text "Paste" :key "menu V")
    :separator
-   (ssw/action :name "Undo" :key "ctrl Z" :handler editor/undo)
-   (ssw/action :name "Redo" :key "ctrl R" :handler editor/redo)])
+   (ssw/action :name "Undo" :key "menu Z" :handler editor/undo)
+   (ssw/action :name "Redo" :key "menu R" :handler editor/redo)])
 
 (def code-menu-content
   [(ssw/action :name "Reconstruct ns" :handler editor/reconstruct-ns)
@@ -49,20 +43,22 @@
                :handler repl/create-new-anonymous-repl)])
 
 (def project-menu-content
-  [(ssw/action :name "New" :mnemonic \N :key "ctrl shift N"
+  [(ssw/action :name "New" :mnemonic \N :key "menu shift N"
                :handler project/create-and-load-new-project)
-   (ssw/action :name "Open" :mnemonic \O :key "ctrl shift O"
+   (ssw/action :name "Open" :mnemonic \O :key "menu shift O"
                :handler project/load-project-from-file)])
 
 (defn llama-editor []
+  (ssw/native!)
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
                                      (ssw/menu :text "Edit" :items edit-menu-content)
                                      (ssw/menu :text "Code" :items code-menu-content)
                                      ;(ssw/menu :text "Repl" :items repl-menu-content)
                                      (ssw/menu :text "Project" :items project-menu-content)])
-        p1 (ssw/left-right-split (ssw/scrollable project/project-pane)
-                                    editor/editor-pane)
-        p2 (ssw/top-bottom-split p1 repl/repl-pane)
+        p1 (ssw/left-right-split 
+             (ssw/scrollable project/project-pane) editor/editor-pane
+             :divider-location 1/4)
+        p2 (ssw/top-bottom-split p1 repl/repl-pane :divider-location 2/3)
         f (ssw/frame :content p2
                      :title "llama editor" 
                      :size [800 :by 500]
