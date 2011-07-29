@@ -1,9 +1,12 @@
 (ns llama.error
-  (:use [clojure.string :only [split-lines]])
+  (:use [clojure.string :only [split-lines]]
+        (llama [lib :only [log]]))
   (:require (seesaw [core :as ssw]
                     [mig :as ssw-mig])
             (llama [document :as document]))
   (:import javax.swing.UIManager))
+
+(log :trace "started loading")
 
 (def ^{:private true} expanded-icon (UIManager/get "Tree.expandedIcon"))
 (def ^{:private true} collapsed-icon (UIManager/get "Tree.collapsedIcon"))
@@ -64,3 +67,4 @@ src/ex_proj/core.clj
   (defn -main [& args]
     ...)")
 
+(log :trace "finished loading")

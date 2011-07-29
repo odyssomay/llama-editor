@@ -2,7 +2,7 @@
   (:use (llama 
           [syntax :only [indent]] 
           [highlight :only [clj-highlight]]
-          [lib :only [*available-fonts* color font]])
+          [lib :only [*available-fonts* color font log]])
         [clojure.string :only [split]]
         [seesaw.invoke :only [invoke-later invoke-now]]
         clj-arrow.arrow
@@ -13,6 +13,8 @@
   (:import javax.swing.text.AbstractDocument$DefaultDocumentEvent
            javax.swing.event.DocumentEvent$EventType
            java.awt.RenderingHints))
+
+(log :trace "started loading")
 
 (defn get-font []
   (font (first (filter #(case %
@@ -236,3 +238,5 @@
                 :text-pane jtext
                 :manager manager)))
 )
+
+(log :trace "finished loading")

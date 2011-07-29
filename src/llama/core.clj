@@ -6,11 +6,14 @@
             (llama [editor :as editor]
                    [repl :as repl]
                    [project :as project]
-                   [state :as state]))
+                   [state :as state]
+                   [lib :as lib]))
   (:import (javax.swing.text DefaultEditorKit$CutAction 
                              DefaultEditorKit$CopyAction 
                              DefaultEditorKit$PasteAction)
            (javax.swing JMenuItem)))
+
+(lib/log :trace "started loading")
 
 (def file-menu-content 
   [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "menu N"
@@ -89,3 +92,4 @@
     (ssw/show! f)
     nil))
 
+(lib/log :trace "finished loading")

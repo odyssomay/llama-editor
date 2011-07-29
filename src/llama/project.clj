@@ -5,7 +5,8 @@
             (llama [editor :as editor]
                    [error :as error]
                    [repl :as repl]
-                   [state :as state])
+                   [state :as state]
+                   [lib :as lib])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
                     [tree :as ssw-tree]
@@ -14,6 +15,8 @@
             (leiningen [core :as lein-core]
                        [run :as lein-run]
                        [deps :as lein-deps])))
+
+(lib/log :trace "started loading")
 
 (def project-pane 
   (let [p (ssw-mig/mig-panel)]
@@ -151,3 +154,4 @@
   #(doseq [project %]
      (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
 
+(lib/log :trace "finished loading")

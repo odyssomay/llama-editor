@@ -1,4 +1,7 @@
-(ns llama.config)
+(ns llama.config
+  (:use [llama.lib :only [log]]))
+
+(log :trace "started loading")
 
 (defn load-config-files [& files]
   (dorun (map #(load (str "/config/" %)) files)))
@@ -12,3 +15,5 @@
               (read-string 
                 (str "[" (slurp (.getPath (ClassLoader/getSystemResource "config-order")))
                      "]")))))
+
+(log :trace "finished loading")

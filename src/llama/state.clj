@@ -4,6 +4,8 @@
   (:import (java.io BufferedInputStream BufferedOutputStream
                     FileInputStream FileOutputStream)))
 
+(log :trace "started loading")
+
 (def state-file (file "state"))
 (def beans-file (file state-file "beans"))
 
@@ -71,3 +73,4 @@
     (doseq [[id b] @beans]
       (save-bean id (b)))))
 
+(log :trace "finished loading")

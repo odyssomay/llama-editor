@@ -1,7 +1,7 @@
 (ns llama.repl
   (:use (llama [document :only [create-text-area]]
                [syntax :only [parens-count]]
-               [lib :only [start-process drop-nth]]
+               [lib :only [start-process drop-nth log]]
                [state :only [defstate load-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
@@ -13,6 +13,8 @@
   (:import 
     (javax.swing JTextArea)
     (java.awt.event KeyEvent KeyListener)))
+
+(log :trace "started loading")
 
 (defn start-repl [project]
   (let [classpath (if (::anonymous project)
@@ -170,3 +172,5 @@
                                                 paths)]
                                   (create-new-repl project))))
 )
+
+(log :trace "finished loading")

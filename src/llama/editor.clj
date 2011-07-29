@@ -7,6 +7,8 @@
               (seesaw [core :as ssw]
                       [chooser :as ssw-chooser])))
 
+(log :trace "started loading")
+
 (let [tp (ssw/tabbed-panel :overflow :scroll)
       tabbed_pane tp
       docs (atom [])] 
@@ -115,3 +117,4 @@
     (open-file d))
 )
 
+(log :trace "finished loading")

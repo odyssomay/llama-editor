@@ -1,10 +1,13 @@
 (ns llama.code
   (:use [clojure.string :only (split join)]
+        [llama.lib :only [log]]
         [slam.hound 
          [asplode :only [asplode]]
          [regrow :only [regrow]]
          [stitch :only [stitch-up]]])
   (:import (javax.swing JOptionPane)))
+
+(log :trace "started loading")
 
 (defn get-proxy-methods  
   "Get the methods from a proxy." 
@@ -53,3 +56,5 @@
       asplode
       regrow
       stitch-up))
+
+(log :trace "finished loading")

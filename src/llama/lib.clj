@@ -5,6 +5,8 @@
            java.io.File
            (java.awt Color Font GraphicsEnvironment)))
 
+(logger/log :trace "started loading")
+
 (defn drop-nth [coll n]
   "Drop (remove) the n item in coll."
   (concat (take n coll) (drop (inc n) coll)))
@@ -124,3 +126,4 @@
                             "\n"))))
 
 
+(log :trace "finished loading")

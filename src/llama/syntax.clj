@@ -1,5 +1,8 @@
 (ns llama.syntax
-    (:use [clojure.string :only (split)]))
+    (:use [clojure.string :only (split)]
+          (llama [lib :only [log]])))
+
+(log :trace "started loading")
 
 ;; p-count function
 
@@ -117,3 +120,5 @@
 		       #"\n"))]
     (apply str (cons \newline
 		     (take indent (repeat \space))))))
+
+(log :trace "finished loading")
