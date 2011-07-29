@@ -9,5 +9,10 @@
                  [clj-arrow "1.0.3-SNAPSHOT"]
                  [seesaw "1.0.10"]
                  [leiningen "1.6.1"]
-                 [slamhound "1.1.1"]]
+                 [slamhound "1.1.1"]
+                 [org.clojure/tools.logging "0.1.2"]
+                 [log4j "1.2.15" :exclusions [javax.mail/mail
+                                              javax.jms/jms
+                                              com.sun.jdmk/jmxtools
+                                              com.sun.jmx/jmxri]]]
   :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]])

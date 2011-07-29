@@ -1,8 +1,9 @@
 (ns llama.lib
+  (:require [clojure.tools.logging :as logger])
   (:import (java.io OutputStreamWriter InputStreamReader)
-	   (javax.swing JTabbedPane)
+           (javax.swing JTabbedPane)
            java.io.File
-          (java.awt Color Font GraphicsEnvironment)))
+           (java.awt Color Font GraphicsEnvironment)))
 
 (defn drop-nth [coll n]
   "Drop (remove) the n item in coll."
@@ -111,4 +112,15 @@
      "red" Color/red
      "white" Color/white
      "yellow" Color/yellow)))
+
+(defmacro log 
+  ([level msg]
+   `(logger/log ~level ~msg))
+  ([level e msg]
+   `(logger/log ~level (str ~msg "\n    " 
+                            (.getMessage ~e) "\n        "
+                            (apply str (interpose "\n        " 
+                                                  (take 7 (.getStackTrace ~e))))
+                            "\n"))))
+
 
