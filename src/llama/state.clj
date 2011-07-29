@@ -1,5 +1,6 @@
 (ns llama.state
-  (:use [clojure.java.io :only [file]])
+  (:use [clojure.java.io :only [file]]
+        [llama [lib :only [log]]])
   (:import (java.io BufferedInputStream BufferedOutputStream
                     FileInputStream FileOutputStream)))
 
@@ -16,15 +17,21 @@
   ([id]
    (load-state id identity))
   ([id if-found]
-   (let [f (file state-file (name id))]
-     (if (.exists f)
-       (if-found (read-string (slurp f)))))))
+   (try 
+     (let [f (file state-file (name id))]
+       (if (.exists f)
+         (if-found (read-string (slurp f)))))
+     (catch Exception e
+       (log :error e (str "unable to recover state " id))))))
 
 (defn save-state [id state]
-  (let [f (file state-file (name id))]
-    (with-open [out (java.io.FileWriter. f)]
-      (binding [*out* out]
-        (pr state)))))
+  (try 
+    (let [f (file state-file (name id))]
+      (with-open [out (java.io.FileWriter. f)]
+        (binding [*out* out]
+          (pr state))))
+    (catch Exception e
+      (log :error e (str "unable to save state " id)))))
 
 (let [states (atom [])]
   (defn defstate [id f]
@@ -40,15 +47,21 @@
   ([id]
    (load-bean id identity))
   ([id if-found]
-   (let [f (file beans-file (name id))]
-     (if (.exists f)
-       (with-open [d (java.beans.XMLDecoder. (BufferedInputStream. (FileInputStream. f)))]
-         (if-found (.readObject d)))))))
+   (try
+     (let [f (file beans-file (name id))]
+       (if (.exists f)
+         (with-open [d (java.beans.XMLDecoder. (BufferedInputStream. (FileInputStream. f)))]
+           (if-found (.readObject d)))))
+     (catch Exception e
+       (log :error e (str "unable to recover bean " id))))))
 
 (defn save-bean [id b]
-  (let [f (file beans-file (name id))]
-    (with-open [enc (java.beans.XMLEncoder. (BufferedOutputStream. (FileOutputStream. f)))]
-      (.writeObject enc b))))
+  (try 
+    (let [f (file beans-file (name id))]
+      (with-open [enc (java.beans.XMLEncoder. (BufferedOutputStream. (FileOutputStream. f)))]
+        (.writeObject enc b)))
+    (catch Exception e
+      (log :error e (str "unable to save bean " id)))))
 
 (let [beans (atom [])]
   (defn defbean [id b]
