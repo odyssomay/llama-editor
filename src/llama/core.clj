@@ -55,9 +55,10 @@
                                      (ssw/menu :text "Code" :items code-menu-content)
                                      ;(ssw/menu :text "Repl" :items repl-menu-content)
                                      (ssw/menu :text "Project" :items project-menu-content)])
-        p1 (ssw/left-right-split (ssw/scrollable project/project-pane)
-                                    editor/editor-pane)
-        p2 (ssw/top-bottom-split p1 repl/repl-pane)
+        p1 (ssw/left-right-split 
+             (ssw/scrollable project/project-pane) editor/editor-pane
+             :divider-location 1/4)
+        p2 (ssw/top-bottom-split p1 repl/repl-pane :divider-location 2/3)
         f (ssw/frame :content p2
                      :title "llama editor" 
                      :size [800 :by 500]
