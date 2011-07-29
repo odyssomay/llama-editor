@@ -27,15 +27,9 @@
                :handler editor/remove-current-tab)])
 
 (def edit-menu-content
-  [(doto (JMenuItem. (DefaultEditorKit$CutAction.))
-     (.setText "Cut")
-     (.setAccelerator (seesaw.keystroke/keystroke "menu X")))
-   (doto (JMenuItem. (DefaultEditorKit$CopyAction.))
-     (.setText "Copy")
-     (.setAccelerator (seesaw.keystroke/keystroke "menu C")))
-   (doto (JMenuItem. (DefaultEditorKit$PasteAction.))
-     (.setText "Paste")
-     (.setAccelerator (seesaw.keystroke/keystroke "menu V")))
+  [(ssw/menu-item :action (DefaultEditorKit$CutAction.) :text "Cut" :key "menu X")
+   (ssw/menu-item :action (DefaultEditorKit$CopyAction.) :text "Copy" :key "menu C")
+   (ssw/menu-item :action (DefaultEditorKit$PasteAction.) :text "Paste" :key "menu V")
    :separator
    (ssw/action :name "Undo" :key "menu Z" :handler editor/undo)
    (ssw/action :name "Redo" :key "menu R" :handler editor/redo)])
