@@ -54,7 +54,8 @@
       (reset! a nil)))) ; not really needed, but more elegant
 
 (defn create-project-menu [project]
-  [(ssw/action :name "run"
+  [:separator
+   (ssw/action :name "run"
                :handler (fn [_] (run-project project)))
    (ssw/action :name "stop"
                :handler (fn [_] (stop-project project)))
@@ -108,8 +109,7 @@
                                       (ssw/action :name "remove file"
                                                   :handler (fn [_]
                                                              (.delete selected_file)
-                                                             (update_tree)))
-                                      :separator]
+                                                             (update_tree)))]
                                      :else [])
                                    project_menu)))))
     (.setCellRenderer
