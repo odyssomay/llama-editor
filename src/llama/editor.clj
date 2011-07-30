@@ -29,8 +29,9 @@
   (defn current-component [& _]
     (:content (current-tab)))
 
-  (def current-text
-    (>>> current-tab :text-pane #(.getText %)))
+  (defn current-text [& _]
+    (if-let [tab (current-tab)]
+      (.getText (:text-pane tab))))
 
   ;; argument is a map with :title :path
   (defn open-file [file]
@@ -53,8 +54,12 @@
          open-file))
 
   ;; argument is the path
-  (def save-file
-    (>>> clone (snd current-text) (fn [[path text]] (spit path text))))
+  (defn save-file [path]
+    (try 
+      (let [text (current-text)]
+        (spit path text))
+      (catch Exception e
+        (log :error e (str "failed to save file: " path)))))
 
   (defn save-as [& _]
     (try 
@@ -66,7 +71,7 @@
                    (fn [coll]
                      (change-i i #(assoc % :path path :title (.getName f)) coll))))))
       (catch Exception e
-        (log :error e (str "failed to save file")))))
+        (log :error e "failed to save file as"))))
 
   ;; argument is ignored
   (def save
