@@ -22,7 +22,9 @@
    (try 
      (let [f (file state-file (name id))]
        (if (.exists f)
-         (if-found (read-string (slurp f)))))
+         (let [content (read-string (slurp f))]
+           (if-found content)
+           content)))
      (catch Exception e
        (log :error e (str "unable to recover state " id))))))
 
@@ -53,7 +55,9 @@
      (let [f (file beans-file (name id))]
        (if (.exists f)
          (with-open [d (java.beans.XMLDecoder. (BufferedInputStream. (FileInputStream. f)))]
-           (if-found (.readObject d)))))
+           (let [content (.readObject d)]
+             (if-found content)
+             content))))
      (catch Exception e
        (log :error e (str "unable to recover bean " id))))))
 
