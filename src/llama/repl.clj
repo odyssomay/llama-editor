@@ -33,7 +33,7 @@
     (doto (:output_stream process)
       (.write repl_source)
       .flush)
-    process))
+    (merge process project)))
 
 (defn stop-repl [{:keys [process input_stream output_stream]}]
 ;  (.interrupt thread)
@@ -68,6 +68,9 @@
         input_text (atom "")
         history (atom [])
         history_pos (atom 0)]
+    (let [state_name (str "repl-history-" (:name repl))]
+      (defstate state_name (fn [] @history))
+      (load-state state_name #(reset! history %)))
     (add-watch history_pos nil
       (fn [_ _ _ value]
         (if (== value 0)
