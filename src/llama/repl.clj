@@ -64,20 +64,43 @@
 (defn init-repl-input-field [repl repl_pane]
   (let [input_field (:text-pane (create-text-area {:type "clj"}))
         jdoc (.getDocument repl_pane) 
-        reset-text? (atom false)]
+        reset-text? (atom false)
+        input_text (atom "")
+        history (atom [])
+        history_pos (atom 0)]
+    (add-watch history_pos nil
+      (fn [_ _ _ value]
+        (if (== value 0)
+          (.setText input_field @input_text)
+          (let [text (nth @history (dec @history_pos))]
+            (.setText input_field text)
+            (.setCaretPosition input_field (count text))))))
     (.addKeyListener
       input_field
       (reify java.awt.event.KeyListener
         (keyPressed 
           [_ e]
-          (if (= (.getKeyChar e) \newline)
+          (condp = (.getKeyCode e)
+            KeyEvent/VK_UP (when (and (not (some (partial = \newline) (.getText input_field 0 (.getCaretPosition input_field))))
+                                      (< @history_pos (count @history)))
+                             (if (== @history_pos 0)
+                               (reset! input_text (.getText input_field)))
+                             (swap! history_pos inc))
+            KeyEvent/VK_DOWN (if (and (not (some (partial = \newline) 
+                                                 (drop (.getCaretPosition input_field)
+                                                       (.getText input_field))))
+                                      (> @history_pos 0))
+                               (swap! history_pos dec))
+            KeyEvent/VK_ENTER
             (let [text (str (.getText input_field) "\n")]
               (if (= (.trim text) "")
                 (reset! reset-text? true)
-                (when (zero? (parens-count text))
+                (when (<= (parens-count text) 0)
                   (reset! reset-text? true)
                   (.insertString jdoc (.getLength jdoc) text nil) 
-                  (send-to-repl repl text))))))
+                  (send-to-repl repl text)
+                  (swap! history #(concat [(apply str (butlast text))] %)))))
+            nil))
         (keyTyped [_ e] )
         (keyReleased 
           [_ e]
