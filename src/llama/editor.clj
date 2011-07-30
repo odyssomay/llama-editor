@@ -31,22 +31,19 @@
     (>>> current-tab :text-pane #(.getText %)))
 
   ;; argument is a map with :title :path
-  (def open-file
-    (>>> clone
-         (||| #(find-i (:path %) (map :path @docs))
-              (>>> first #(.setSelectedIndex tabbed_pane %))
-              (snd (>>> create-text-area #(swap! docs conj %) 
-                        ;(hssw/input-arr tp :content)
-                        )))))
+  (defn open-file [file]
+    (try 
+      (if-let [i (find-i (:path file) (map :path @docs))]
+        (.setSelectedIndex tabbed_pane i)
+        (let [area (create-text-area file)]
+          (swap! docs conj area)))
+      (catch Exception e
+        (log :error e (str "failed to create open file")))))
 
-  ;; argument is ignored
-  (def open-and-choose-file
-    (>>> (constantly [nil nil])
-         (||| (fn [_] 
-                (if-let [f (ssw-chooser/choose-file)]
-                  {:title (.getName f)
-                   :path (.getCanonicalPath f)}))
-              (>>> first open-file))))
+  (defn open-and-choose-file [& _]
+    (if-let [f (ssw-chooser/choose-file)]
+      (open-file {:title (.getName f)
+                  :path (.getCanonicalPath f)})))
 
   ;; argument is ignored
   (def new-file 
@@ -57,15 +54,17 @@
   (def save-file
     (>>> clone (snd current-text) (fn [[path text]] (spit path text))))
 
-  ;; argument is ignored
-  (def save-as
-    (>>> (constantly [nil nil])
-         (||| (ignore #(.getCanonicalPath (ssw-chooser/choose-file)))
-              (&&& (fst save-file)
-                   (>>> (snd selected-index)
-                        (fn [[path index]] 
-                          (swap! docs (fn [coll]
-                                        (change-i index #(assoc % :path path :title (.getName (file path))) coll)))))))))
+  (defn save-as [& _]
+    (try 
+      (when-let [f (new-file-dialog)]
+        (let [path (.getCanonicalPath f)]
+          (save-file path)
+          (let [i (selected-index)]
+            (swap! docs 
+                   (fn [coll]
+                     (change-i i #(assoc % :path path :title (.getName f)) coll))))))
+      (catch Exception e
+        (log :error e (str "failed to save file")))))
 
   ;; argument is ignored
   (def save
@@ -108,6 +107,8 @@
 
   (def editor-pane 
     tabbed_pane)
+
+;; states
 
   (state/defstate :editor-pane
     (fn [] (map #(hash-map :title (:title %)
