@@ -133,16 +133,18 @@
         dir (ssw/text :text (System/getProperty "user.home"))
         panel (ssw/border-panel 
                 :north filename :center dir 
-                :east (ssw/action :name "browse" :handler (fn [_]
-                                                            (.setText dir
-                                                                      (.getCanonicalPath
-                                                                        (ssw-chooser/choose-file
-                                                                          :type "Ok" :selection-mode :dirs-only))))))
+                :east (ssw/action 
+                        :name "browse" 
+                        :handler (fn [_]
+                                   (ssw-chooser/choose-file 
+                                     parent :type "Ok" :selection-mode :dirs-only
+                                     :success-fn #(.setText dir (.getCanonicalPath %))))))
         dialog (ssw/dialog :content panel :option-type :ok-cancel
-                            :modal? true)]
+                           :modal? true)]
+    (if parent (.setLocationRelativeTo dialog parent))
     (.setResizable dialog false)
     (when (-> dialog ssw/pack! ssw/show!)
       (file (.getText dir) (.getText filename)))))
 
-
 (log :trace "finished loading")
+
