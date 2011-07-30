@@ -18,8 +18,10 @@
       (.removeAll tp)
       (ssw/config! tp :tabs items)))
 
-  (def selected-index
-    (ignore #(.getSelectedIndex tabbed_pane)))
+  (defn selected-index [& _]
+    (let [i (.getSelectedIndex tabbed_pane)]
+      (if-not (== i -1)
+        i)))
 
   (defn current-tab [& _]
     (nth @docs (selected-index) nil))
@@ -56,10 +58,10 @@
 
   (defn save-as [& _]
     (try 
-      (when-let [f (new-file-dialog)]
-        (let [path (.getCanonicalPath f)]
-          (save-file path)
-          (let [i (selected-index)]
+      (if-let [i (selected-index)]
+        (when-let [f (new-file-dialog tabbed_pane)]
+          (let [path (.getCanonicalPath f)]
+            (save-file path)
             (swap! docs 
                    (fn [coll]
                      (change-i i #(assoc % :path path :title (.getName f)) coll))))))
