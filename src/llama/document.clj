@@ -24,7 +24,7 @@
                  "Courier new" true
                  "Monospaced" true
                  nil) *available-fonts*)) 12))
-
+(comment
 (def *default-color* (color "black"))
 
 (defn get-styles []
@@ -42,7 +42,7 @@
      {:name "REGEX2"      :color *default-color*}
      {:name "WARNING"     :color (color "red")}
      {:name "ERROR"       :color (color "red")}])
-
+)
 (defn init-undoable-edits [jdoc]
   (let [manager (javax.swing.undo.UndoManager.)
         listener (reify javax.swing.event.UndoableEditListener
@@ -55,8 +55,10 @@
     (.addUndoableEditListener jdoc listener)
     manager))
 
+(comment
 (defn in-string? [text]
   (odd? (count (filter (partial = \") text))))
+)
 
 (comment
 (defn create-highlight-fn [jtext_pane]
