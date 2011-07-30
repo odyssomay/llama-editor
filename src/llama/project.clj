@@ -27,6 +27,12 @@
 (add-watch current-projects nil (fn [_ _ _ items]
                                   (ssw/config! project-pane :items (map #(vec [(::project-tree %) "span"]) items))))
 
+(defn close-project [project]
+  (swap! current-projects
+         (fn [items]
+           (remove #(= (:target-dir %)
+                       (:target-dir project)) items))))
+
 (defn run-project [project]
   {:pre [(contains? project ::project-thread)
          (contains? project ::project-tree)]}
@@ -65,7 +71,9 @@
    (ssw/action :name "deps"
                :handler (fn [_] (lein-deps/deps project)))
    (ssw/action :name "repl"
-               :handler (fn [_] (repl/create-new-repl project)))])
+               :handler (fn [_] (repl/create-new-repl project)))
+   (ssw/action :name "close"
+               :handler (fn [_] (close-project project)))])
 
 (defrecord custom-file [file]
   Object
@@ -133,15 +141,12 @@
          (-> (create-new-project-tree project) 
              (assoc ::project-thread (atom nil)))))
 
-(def create-new-project
-  (>>> (fn [& _]
-         (ssw-chooser/choose-file))
-       #(if %
-          (llama-new/new-project (.getName %) (.getPath %)))))
+(defn create-new-project [f]
+  (llama-new/new-project (.getName f) (.getPath f)))
 
 (defn create-and-load-new-project [& _]
-  (when-let [f (ssw-chooser/choose-file)]
-    (llama-new/new-project (.getName f) (.getCanonicalPath f))
+  (when-let [f (lib/new-file-dialog)]
+    (create-new-project f)
     (load-project (lein-core/read-project (.getCanonicalPath (file f "project.clj"))))))
 
 (defn load-project-from-file [& _]
