@@ -38,7 +38,7 @@
         (let [area (create-text-area file)]
           (swap! docs conj area)))
       (catch Exception e
-        (log :error e (str "failed to create open file")))))
+        (log :error e (str "failed to open file")))))
 
   (defn open-and-choose-file [& _]
     (if-let [f (ssw-chooser/choose-file)]
