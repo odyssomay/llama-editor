@@ -1,5 +1,8 @@
 (ns llama.lib
-  (:require [clojure.tools.logging :as logger])
+  (:use [clojure.java.io :only [file]])
+  (:require [clojure.tools.logging :as logger]
+            [seesaw [core :as ssw]
+                    [chooser :as ssw-chooser]])
   (:import (java.io OutputStreamWriter InputStreamReader)
            (javax.swing JTabbedPane)
            java.io.File
@@ -124,6 +127,22 @@
                             (apply str (interpose "\n        " 
                                                   (take 7 (.getStackTrace ~e))))
                             "\n"))))
+
+(defn new-file-dialog [& [parent]]
+  (let [filename (ssw/text)
+        dir (ssw/text :text (System/getProperty "user.home"))
+        panel (ssw/border-panel 
+                :north filename :center dir 
+                :east (ssw/action :name "browse" :handler (fn [_]
+                                                            (.setText dir
+                                                                      (.getCanonicalPath
+                                                                        (ssw-chooser/choose-file
+                                                                          :type "Ok" :selection-mode :dirs-only))))))
+        dialog (ssw/dialog :content panel :option-type :ok-cancel
+                            :modal? true)]
+    (.setResizable dialog false)
+    (when (-> dialog ssw/pack! ssw/show!)
+      (file (.getText dir) (.getText filename)))))
 
 
 (log :trace "finished loading")
