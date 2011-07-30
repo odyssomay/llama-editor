@@ -39,7 +39,8 @@
 
 (def code-menu-content
   [(ssw/action :name "Reconstruct ns" :handler editor/reconstruct-ns)
-   (ssw/action :name "Insert proxy" :handler editor/insert-proxy)])
+   ;(ssw/action :name "Insert proxy" :handler editor/insert-proxy)
+   ])
 
 (def repl-menu-content
   [(ssw/action :name "New" :mnemonic \N
@@ -55,7 +56,7 @@
   (ssw/native!)
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
                                      (ssw/menu :text "Edit" :items edit-menu-content)
-                                     (ssw/menu :text "Code" :items code-menu-content)
+                                     ;(ssw/menu :text "Code" :items code-menu-content)
                                      ;(ssw/menu :text "Repl" :items repl-menu-content)
                                      (ssw/menu :text "Project" :items project-menu-content)])
         p1 (ssw/left-right-split 
