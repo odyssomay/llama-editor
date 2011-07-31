@@ -70,7 +70,7 @@
         history_pos (atom 0)]
     (let [state_name (str "repl-history-" (:name repl))]
       (defstate state_name (fn [] @history))
-      (load-state state_name #(reset! history %)))
+      (load-state state_name #(reset! history (take 50 %))))
     (add-watch history_pos nil
       (fn [_ _ _ value]
         (if (== value 0)
