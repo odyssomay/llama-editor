@@ -1,3 +1,6 @@
+(use '[seesaw.core :only [native!]])
+(native!)
+
 (ns llama.core
   (:use clj-arrow.arrow
         [clojure.java.io :only [file]])
@@ -53,7 +56,6 @@
                :handler project/load-project-from-file)])
 
 (defn llama-editor []
-  (ssw/native!)
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
                                      (ssw/menu :text "Edit" :items edit-menu-content)
                                      ;(ssw/menu :text "Code" :items code-menu-content)
