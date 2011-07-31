@@ -10,7 +10,8 @@
                    [repl :as repl]
                    [project :as project]
                    [state :as state]
-                   [lib :as lib]))
+                   [lib :as lib]
+                   [statics :as statics]))
   (:import (javax.swing.text DefaultEditorKit$CutAction 
                              DefaultEditorKit$CopyAction 
                              DefaultEditorKit$PasteAction)
@@ -55,7 +56,7 @@
    (ssw/action :name "Open" :mnemonic \O :key "menu shift O"
                :handler project/load-project-from-file)])
 
-(defn llama-editor []
+(defn load-editor []
   (let [menubar (ssw/menubar :items [(ssw/menu :text "File" :items file-menu-content)
                                      (ssw/menu :text "Edit" :items edit-menu-content)
                                      ;(ssw/menu :text "Code" :items code-menu-content)
@@ -65,10 +66,13 @@
              (ssw/scrollable project/project-pane) editor/editor-pane
              :divider-location 1/4)
         p2 (ssw/top-bottom-split p1 repl/repl-pane :divider-location 2/3)
-        f (ssw/frame :content p2
-                     :title "llama editor" 
-                     :size [800 :by 500]
-                     :menubar menubar)]
+        f statics/frame]
+
+    (ssw/config! f
+                 :content p2
+                 :title "llama editor" 
+                 :size [800 :by 500]
+                 :menubar menubar)
 
     (state/defstate :panel1 #(.getDividerLocation p1))
     (state/defstate :panel2 #(.getDividerLocation p2))
@@ -84,15 +88,17 @@
         (apply ssw/config! f state)))
 
     (state/defbean :frame-location #(.getLocation f))
-    (state/load-bean :frame-location #(.setLocation f %))
+    (state/load-bean :frame-location #(.setLocation f %))))
 
-    (ssw/listen 
-      f :window-closing 
-      (fn [_]  
-        (state/save-states)
-        (state/save-bean-states)
-        (System/exit 0)))
-    (ssw/show! f)
-    nil))
+(defn llama-editor []
+  (load-editor)
+  (ssw/listen 
+    statics/frame :window-closing 
+    (fn [_]  
+      (state/save-states)
+      (state/save-bean-states)
+      (System/exit 0)))
+  (ssw/show! statics/frame)
+  nil)
 
 (lib/log :trace "finished loading")
