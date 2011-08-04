@@ -37,7 +37,6 @@
     (let [i (.getSelectedIndex tabbed_pane)
           c (current-component)]
       (when (= (.getClientProperty c :save-indicator) :saved)
-        (log :trace "updated title")
         (.putClientProperty c :save-indicator :changed)
         (.setTitleAt tabbed_pane i (str (.getTitleAt tabbed_pane i) "*")))))
 
