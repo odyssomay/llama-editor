@@ -33,12 +33,34 @@
     (if-let [tab (current-tab)]
       (.getText (:text-pane tab))))
 
+  (defn set-save-indicator-changed! [& _]
+    (let [i (.getSelectedIndex tabbed_pane)
+          c (current-component)]
+      (when (= (.getClientProperty c :save-indicator) :saved)
+        (log :trace "updated title")
+        (.putClientProperty c :save-indicator :changed)
+        (.setTitleAt tabbed_pane i (str (.getTitleAt tabbed_pane i) "*")))))
+
+  (defn set-save-indicator-saved! [& _]
+    (let [i (.getSelectedIndex tabbed_pane)
+          c (current-component)]
+      (when (= (.getClientProperty c :save-indicator) :changed)
+        (.putClientProperty c :save-indicator :saved)
+        (.setTitleAt tabbed_pane i (apply str (butlast (.getTitleAt tabbed_pane i)))))))
+
   ;; argument is a map with :title :path
   (defn open-file [file]
     (try 
       (if-let [i (find-i (:path file) (map :path @docs))]
         (.setSelectedIndex tabbed_pane i)
         (let [area (create-text-area file)]
+          (.putClientProperty (:content area) :save-indicator :saved)
+          (.addDocumentListener 
+            (.getDocument (:text-pane area))
+            (reify javax.swing.event.DocumentListener
+              (changedUpdate [_ e] (set-save-indicator-changed!))
+              (insertUpdate [_ e] )
+              (removeUpdate [_ e] )))
           (swap! docs conj area)))
       (catch Exception e
         (log :error e (str "failed to open file")))))
@@ -58,6 +80,7 @@
     (try 
       (let [text (current-text)]
         (spit path text))
+      (set-save-indicator-saved!)
       (catch Exception e
         (log :error e (str "failed to save file: " path)))))
 
