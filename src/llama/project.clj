@@ -18,6 +18,8 @@
 
 (lib/log :trace "started loading")
 
+;; data structure
+
 (def project-pane 
   (let [p (ssw-mig/mig-panel)]
     (.setBackground p (ssw-color/color 255 255 255))
@@ -32,6 +34,8 @@
          (fn [items]
            (remove #(= (:target-dir %)
                        (:target-dir project)) items))))
+
+;; running
 
 (defn run-project [project]
   {:pre [(contains? project ::project-thread)
@@ -62,6 +66,8 @@
       (.interrupt @a)
       (reset! a nil)))) ; not really needed, but more elegant
 
+;; menu
+
 (defn create-project-menu [project]
   [:separator
    (ssw/action :name "run"
@@ -74,6 +80,36 @@
                :handler (fn [_] (repl/create-new-repl project)))
    (ssw/action :name "close"
                :handler (fn [_] (close-project project)))])
+
+(defn specialized-menu [tree project update-tree]
+  (fn [e]
+    (if-let [raw_path (.getPathForLocation tree (.getX e) (.getY e))]
+      (let [path (->> raw_path
+                   .getPath
+                   (map #(.getName (:file %))))
+            selected_file (apply file (cons (:target-dir project) (rest path)))]
+        (concat
+          (if (.isDirectory selected_file)
+            [(ssw/action :name "new file"
+                         :handler (fn [_]
+                                    (when-let [name (ssw/input "filename")]
+                                      (.createNewFile (file selected_file name))
+                                      (update-tree))))])
+          (cond
+            (not (.isDirectory selected_file))
+            [(ssw/action :name "open file"
+                         :handler (fn [_]
+                                    (editor/open-file {:path (.getCanonicalPath selected_file)
+                                                       :title (last path)})))
+             (ssw/menu :text "advanced"
+                       :items 
+                       [(ssw/action :name "remove file"
+                                    :handler (fn [_]
+                                               (.delete selected_file)
+                                               (update-tree)))])]
+            :else []))))))
+
+;; model
 
 (defrecord custom-file [file]
   Object
@@ -90,51 +126,36 @@
                     (sort-by #(.getName %) (get groups false))))))
     (custom-file. (file path))))
 
+;; cell renderer
+
 (defn set-icon [c icon]
   (.setIcon c (ssw/icon (ClassLoader/getSystemResource (str "icons/" icon)))))
+
+(defn create-project-tree-renderer []
+  (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
+    (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
+                                  (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
+                                    (if (.toString value)
+                                      (condp #(.endsWith (.toString %2) %1) value
+                                        ".clj"  (set-icon c "clj.gif")
+                                        ".jar"  (set-icon c "java-jar.png")
+                                        ".java" (set-icon c "System-Java-icon.png")
+                                        nil))
+                                    c))))
+
+;; project tree
 
 (defn create-new-project-tree [project]
   (let [tc (javax.swing.JTree. (create-file-tree-model (:target-dir project)))
         project (assoc project ::project-tree tc)
-        project_menu (create-project-menu project)
-        update_tree (fn [& _] (.updateUI tc))]
-    (ssw/config! tc :popup (fn [e] 
-                             (if-let [raw_path (.getPathForLocation tc (.getX e) (.getY e))]
-                               (let [path (->> raw_path
-                                            .getPath
-                                            (map #(.getName (:file %))))
-                                     selected_file (apply file (cons (:target-dir project) (rest path)))]
-                                 (concat
-                                   (if (.isDirectory selected_file)
-                                     [(ssw/action :name "new file"
-                                                  :handler (fn [_]
-                                                             (when-let [name (ssw/input "filename")]
-                                                               (.createNewFile (file selected_file name))
-                                                               (update_tree))))])
-                                   (cond 
-                                     (not (.isDirectory selected_file))
-                                     [(ssw/action :name "open file" 
-                                                  :handler (fn [_]
-                                                             (editor/open-file {:path (.getCanonicalPath selected_file)
-                                                                                :title (last path)})))
-                                      (ssw/action :name "remove file"
-                                                  :handler (fn [_]
-                                                             (.delete selected_file)
-                                                             (update_tree)))]
-                                     :else [])
-                                   project_menu)))))
-    (.setCellRenderer
-      tc (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
-          (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
-            (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
-              (if (.toString value)
-                (condp #(.endsWith (.toString %2) %1) value
-                  ".clj"  (set-icon c "clj.gif")
-                  ".jar"  (set-icon c "java-jar.png")
-                  ".java" (set-icon c "System-Java-icon.png")
-                  nil))
-              c))))
+        project-menu (create-project-menu project)
+        update-tree (fn [& _] (.updateUI tc))
+        menu-f (specialized-menu tc project update-tree)]
+    (ssw/config! tc :popup (fn [e] (concat (menu-f e) project-menu)))
+    (.setCellRenderer tc (create-project-tree-renderer))
     project))
+
+;; state
 
 (defn load-project [project]
   (swap! current-projects conj 
