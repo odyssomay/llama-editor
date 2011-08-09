@@ -14,12 +14,16 @@
                                 false)
                              (t))]
       (when (seq namespaces)
-        (print "\nReloading: llama.core ")
-        (doseq [n namespaces]
-          (print n "")
-          (reload n))
-        (prn)
-        (reload 'llama.core)))))
+        (try
+          (print "\nReloading: llama.core ")
+          (doseq [n namespaces]
+            (print n "")
+            (reload n))
+          (prn)
+          (reload 'llama.core)
+          (catch Exception e
+            (println "ERROR:\n" e)
+            (.printStackTrace e)))))))
 
 (defn watch-env []
   (doto (ScheduledThreadPoolExecutor. 1)
