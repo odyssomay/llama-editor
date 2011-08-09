@@ -5,7 +5,7 @@ llama-editor is a (relatively) lightweight editor/IDE for the clojure language.
 
 1. Download the [jar](https://github.com/downloads/odyssomay/llama-editor/llama-latest.jar)
 2. It might be possible to simply double-click the file. If that doesn't work however, open a terminal,<br/> 
-   move to the download directory and enter `java -jar llama-1.0.0-SNAPSHOT-standalone.jar`
+   move to the download directory and enter `java -jar llama-latest.jar`
 
 ## Usage
 
