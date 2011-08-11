@@ -29,7 +29,7 @@
                              (cons (char (.read s)) (this))
                              '()))]
                    (f))))
-        process (start-process (str "java -cp " classpath " clojure.main -"))]
+        process (start-process (str "java -cp " classpath " clojure.main -") (:target-dir project))]
     (doto (:output_stream process)
       (.write repl_source)
       .flush)
