@@ -1,6 +1,7 @@
 (ns llama.editor
     (:use clj-arrow.arrow
           (llama document lib
+                 [syntax :only [indent]]
                  [code :only [slamhound-text proxy-dialog]])
           [clojure.java.io :only [file]])
     (:require (llama [state :as state])
@@ -133,6 +134,28 @@
 ;      (ssw/invoke-later
         (.insertString (.getDocument text_pane)
                        (.getCaretPosition text_pane) "" nil)));)
+
+  (defn line-indent [line & [toggle?]]
+    (let [area (:text-pane (current-tab))
+          document (.getDocument area)
+          offset (.getLineStartOffset area line)
+          text (.getText document 0 offset)
+          current-indent  (count (take-while (partial = \space) (subs (.getText area) offset)))
+          new-indent (subs (indent text) 1)]
+      (.remove document offset current-indent)
+      (.insertString document offset (if (and toggle? (== current-indent (count new-indent)))
+                                         (subs (indent text true) 1)
+                                         new-indent)
+                                     nil)))
+
+  (defn indent-selection [& _]
+    (let [area (:text-pane (current-tab))
+          start-line (.getLineOfOffset area (.getSelectionStart area))
+          end-line (.getLineOfOffset area (.getSelectionEnd area))]
+      (if (== start-line end-line)
+        (line-indent start-line true)
+        (doseq [line (range start-line (inc end-line))]
+          (line-indent line)))))
 
   (def editor-pane 
     tabbed_pane)

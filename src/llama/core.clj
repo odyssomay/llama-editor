@@ -39,7 +39,9 @@
    (ssw/menu-item :action (DefaultEditorKit$PasteAction.) :text "Paste" :key "menu V")
    :separator
    (ssw/action :name "Undo" :key "menu Z" :handler editor/undo)
-   (ssw/action :name "Redo" :key "menu R" :handler editor/redo)])
+   (ssw/action :name "Redo" :key "menu R" :handler editor/redo)
+   :separator
+   (ssw/action :name "Indent" :key "menu I" :handler editor/indent-selection)])
 
 (def code-menu-content
   [(ssw/action :name "Reconstruct ns" :handler editor/reconstruct-ns)

@@ -1,5 +1,5 @@
 (ns llama.syntax
-    (:use [clojure.string :only (split)]
+    (:use [clojure.string :only (split split-lines)]
           (llama [lib :only [log]])))
 
 (log :trace "started loading")
@@ -43,6 +43,16 @@
     (if raw_count
       (dec (- (count in_str) raw_count)))))
 
+(defn get-line-for-offset [string offset]
+  (count (filter (partial = \newline) (subs string 0 offset))))
+
+(defn get-line-start-offset [string line]
+  (let [lines (map #(str % "\n") (split-lines string))]
+    (reduce + (map count (take line lines)))))
+
+(defn get-line-offset [string offset]
+  (- offset (get-line-start-offset string (get-line-for-offset string offset))))
+
 ;; parens
 
 (defn parens-count [in_str]
@@ -54,12 +64,17 @@
 (defn find-unmatched-lparens [in_str]
   (find-unmatched-l in_str \( \)))
 
-(defn parens-indent [in_str]
-  (if-let [indent (find-unmatched-lparens in_str)]
-    (if (= (nth in_str (dec indent) nil) \')
-      (inc indent)
-      (+ 2 indent
-	 (count (take-while #(not= % \space) (drop (inc indent) in_str)))))
+(defn parens-indent [string & [dynamic-indent?]]
+  (if-let [unmatched (find-unmatched-lparens string)]
+    (let [indent (get-line-offset string unmatched)
+          in_str (subs string (get-line-start-offset string (get-line-for-offset string unmatched)))]
+      (if (= (nth in_str (dec indent) nil) \')
+        (inc indent)
+        (+ 2 indent
+           (if dynamic-indent?
+             (count (take-while #(not= % \space) (drop (inc indent) in_str)))
+             0)
+           )))
     0))
 
 ;; bracket
@@ -74,8 +89,9 @@
   (find-unmatched-l in_str \[ \]))
 
 (defn bracket-indent [in_str]
-  (if-let [indent (find-unmatched-lbracket in_str)]
-    (inc indent)
+  (if-let [unmatched (find-unmatched-lbracket in_str)]
+    (let [indent (get-line-offset in_str unmatched)]
+      (inc indent))
     0))
 
 ;; cbracket
@@ -90,34 +106,20 @@
   (find-unmatched-l in_str \{ \}))
 
 (defn cbracket-indent [in_str]
-  (if-let [indent (find-unmatched-lcbracket in_str)]
-    (inc indent)
+  (if-let [unmatched (find-unmatched-lcbracket in_str)]
+    (let [indent (get-line-offset in_str unmatched)]
+      (inc indent))
     0))
 
 ;;
 
-(defn get-coll-indent [count_f indent_f str_seq]
-  (let [counts (reductions + (reverse (map count_f str_seq)))]
-    (if (zero? (last counts))
-      0
-      (let [indent_line  (count (take-while #(<= % 0) counts))]
-        (if (== indent_line (count str_seq))
-          0
-          (indent_f (nth (reverse str_seq) indent_line)))))))
+(defn get-indent [string & [dynamic-indent?]]
+  (max (parens-indent string dynamic-indent?)
+       (bracket-indent string)
+       (cbracket-indent string)))
 
-;; get-indent function
-
-(defn get-indent [str_seq]
-  (max (get-coll-indent parens-count parens-indent str_seq)
-       (get-coll-indent bracket-count bracket-indent str_seq)
-       (get-coll-indent cbracket-count cbracket-indent str_seq)))
-
-;; end get-indent
-
-(defn indent [in_str]
-  (let [indent (get-indent
-		(split (str (last (split in_str #"\n[ ]*\n")))
-		       #"\n"))]
+(defn indent [in_str & [dynamic-indent?]]
+  (let [indent (get-indent (str (last (split in_str #"\n[ ]*\n"))) dynamic-indent?)]
     (apply str (cons \newline
 		     (take indent (repeat \space))))))
 
