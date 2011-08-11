@@ -56,7 +56,7 @@
 (defn start-process [command & [working-dir]]
   (let [runtime (Runtime/getRuntime)
 	process (if working-dir 
-                    (.exec runtime command (into-array [""]) (file working-dir))
+                    (.exec runtime command nil (file working-dir))
                     (.exec runtime command))]
     (.addShutdownHook runtime (Thread. #(.destroy process)))
     {:process process
