@@ -157,6 +157,26 @@
         (doseq [line (range start-line (inc end-line))]
           (line-indent line)))))
 
+  (defn change-indent-right [area line]
+    (.insertString (.getDocument area)
+                   (.getLineStartOffset area line) "  " nil))
+
+  (defn change-indent-left [area line]
+    (let [offset (.getLineStartOffset area line)
+          document (.getDocument area)]
+      (dotimes [_ 2]
+        (if (= (.getText document offset 1) " ")
+          (.remove document offset 1)))))
+
+  (defn change-indent [direction]
+    (let [area (:text-pane (current-tab))
+          start-line (.getLineOfOffset area (.getSelectionStart area))
+          end-line (.getLineOfOffset area (.getSelectionEnd area))]
+      (doseq [line (range start-line (inc end-line))]
+        (case direction
+          :right (change-indent-right area line)
+          :left (change-indent-left area line))))) 
+
   (def editor-pane 
     tabbed_pane)
 

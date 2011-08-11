@@ -12,7 +12,8 @@
                    [state :as state]
                    [lib :as lib]
                    [statics :as statics]))
-  (:import (javax.swing.text DefaultEditorKit$CutAction 
+  (:import java.awt.event.KeyEvent
+           (javax.swing.text DefaultEditorKit$CutAction 
                              DefaultEditorKit$CopyAction 
                              DefaultEditorKit$PasteAction)
            (javax.swing JMenuItem)))
@@ -41,7 +42,15 @@
    (ssw/action :name "Undo" :key "menu Z" :handler editor/undo)
    (ssw/action :name "Redo" :key "menu R" :handler editor/redo)
    :separator
-   (ssw/action :name "Indent" :key "menu I" :handler editor/indent-selection)])
+   (ssw/action :name "Indent" :key "menu I" :handler editor/indent-selection)
+   (let [a (ssw/action :name "Indent right" :handler (fn [_] (editor/change-indent :right)))]
+     (.putValue a javax.swing.Action/ACCELERATOR_KEY 
+                (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_RIGHT KeyEvent/ALT_DOWN_MASK))
+     a)
+   (let [a (ssw/action :name "Indent left"  :handler (fn [_] (editor/change-indent :left)))]
+     (.putValue a javax.swing.Action/ACCELERATOR_KEY
+                (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_LEFT KeyEvent/ALT_DOWN_MASK))
+     a)])
 
 (def code-menu-content
   [(ssw/action :name "Reconstruct ns" :handler editor/reconstruct-ns)
