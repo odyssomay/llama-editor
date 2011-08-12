@@ -66,6 +66,25 @@
       (.interrupt @a)
       (reset! a nil)))) ; not really needed, but more elegant
 
+(defn run-project-command [project]
+  (if-let [command (ssw/input "Enter command")]
+    (let [p (lib/start-process command (:target-dir project))
+          output-area (javax.swing.JTextArea. (str "=>" command "\n"))
+          input-area (javax.swing.JTextField.)
+          dialog (ssw/dialog :content (ssw/border-panel :center output-area :south input-area)
+                             :success-fn (fn [& _] (.destroy (:process p))))]
+      (.setEditable output-area false)
+      (.addActionListener input-area
+        (reify java.awt.event.ActionListener
+          (actionPerformed [_ _]
+            (let [text (.getText input-area)]
+              (.write (:output-stream p) text)
+              (.append output-area text)))))
+      (lib/write-stream-to-text (:input-stream p) output-area)
+      (lib/write-stream-to-text (:error-stream p) output-area)
+      (ssw/listen dialog :window-closing (fn [& _] (.destroy (:process p))))
+      (ssw/show! dialog))))
+
 ;; menu
 
 (defn create-project-menu [project]
@@ -88,26 +107,24 @@
                    .getPath
                    (map #(.getName (:file %))))
             selected_file (apply file (cons (:target-dir project) (rest path)))]
-        (concat
-          (if (.isDirectory selected_file)
-            [(ssw/action :name "new file"
-                         :handler (fn [_]
-                                    (when-let [name (ssw/input "filename")]
-                                      (.createNewFile (file selected_file name))
-                                      (update-tree))))])
-          (cond
-            (not (.isDirectory selected_file))
-            [(ssw/action :name "open file"
-                         :handler (fn [_]
-                                    (editor/open-file {:path (.getCanonicalPath selected_file)
-                                                       :title (last path)})))
-             (ssw/menu :text "advanced"
-                       :items 
-                       [(ssw/action :name "remove file"
-                                    :handler (fn [_]
-                                               (.delete selected_file)
-                                               (update-tree)))])]
-            :else []))))))
+        [(ssw/action :name "new file" :enabled? (.isDirectory selected_file)
+                     :handler (fn [_]
+                                (when-let [name (ssw/input "filename")]
+                                  (.createNewFile (file selected_file name))
+                                  (update-tree))))
+         (ssw/action :name "open file" :enabled? (not (.isDirectory selected_file))
+                     :handler (fn [_]
+                                (editor/open-file {:path (.getCanonicalPath selected_file)
+                                                   :title (last path)})))
+         (ssw/menu :text "advanced"
+                   :items 
+                   [(ssw/action :name "run command"
+                                :handler (fn [_] (run-project-command project)))
+                    :separator
+                    (ssw/action :name "remove file" :enabled? (not (.isDirectory selected_file))
+                                :handler (fn [_]
+                                            (.delete selected_file)
+                                            (update-tree)))])]))))
 
 ;; model
 
