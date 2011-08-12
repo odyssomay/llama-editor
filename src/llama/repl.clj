@@ -1,7 +1,7 @@
 (ns llama.repl
   (:use (llama [document :only [create-text-area]]
                [syntax :only [parens-count]]
-               [lib :only [start-process drop-nth log]]
+               [lib :only [start-process drop-nth log write-stream-to-text]]
                [state :only [defstate load-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
@@ -30,36 +30,20 @@
                              '()))]
                    (f))))
         process (start-process (str "java -cp " classpath " clojure.main -") (:target-dir project))]
-    (doto (:output_stream process)
+    (doto (:output-stream process)
       (.write repl_source)
       .flush)
     (merge process project)))
 
-(defn stop-repl [{:keys [process input_stream output_stream]}]
+(defn stop-repl [{:keys [process input-stream output-stream]}]
 ;  (.interrupt thread)
   (.destroy process)
-  (.close input_stream)
-  (.close output_stream))
-
-(defn write-stream-to-text [stream jtext_pane]
-  (let [jdoc (.getDocument jtext_pane)
-        text (atom "")]
-    (.start (Thread. (fn []
-                       (try 
-                         (do
-                           (swap! text str (-> stream .read char str))
-                           (when (not (.ready stream))
-                             (ssw/invoke-now 
-                               (.insertString jdoc (.getLength jdoc) @text nil)
-                               (.setCaretPosition jtext_pane (.getLength jdoc)))
-                             (reset! text ""))
-                           (recur))
-                         ; this means that the stream is closed
-                         (catch java.lang.IllegalArgumentException _ )))))))
+  (.close input-stream)
+  (.close output-stream))
 
 (defn send-to-repl [repl text]
-  (.write (:output_stream repl) text)
-  (.flush (:output_stream repl)))
+  (.write (:output-stream repl) text)
+  (.flush (:output-stream repl)))
 
 (defn init-repl-input-field [repl repl_pane]
   (let [input_field (:text-pane (create-text-area {:type "clj"}))
@@ -102,7 +86,8 @@
                   (reset! reset-text? true)
                   (.insertString jdoc (.getLength jdoc) text nil) 
                   (send-to-repl repl text)
-                  (swap! history #(concat [(apply str (butlast text))] %)))))
+                  (swap! history #(concat [(apply str (butlast text))] %))
+                  (reset! history_pos 0))))
             nil))
         (keyTyped [_ e] )
         (keyReleased 
@@ -113,8 +98,8 @@
     input_field)) 
 
 (defn init-repl-text-fields [repl output_pane error_pane]
-  (write-stream-to-text (:input_stream repl) output_pane)
-  (write-stream-to-text (:error_stream repl) error_pane))
+  (write-stream-to-text (:input-stream repl) output_pane)
+  (write-stream-to-text (:error-stream repl) error_pane))
 
 (defn get-icon-url [icon]
   (ClassLoader/getSystemResource (str "icons/" icon)))
@@ -152,7 +137,7 @@
                                   (stop-repl @repl)
                                   (reset! repl (start-repl project))
                                   (init-repl-panels @repl jtext_pane err_text input_panel)
-                                  (.updateUI input_panel)))
+                                  (.revalidate input_panel)))
            (ssw/action :icon (get-icon-url "gnome_process_stop.png")
                        :tip "Destroy the repl process and close the repl tab."
                        :handler (fn [_] (stop-repl @repl) (close-current-repl nil)))])

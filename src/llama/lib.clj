@@ -1,5 +1,6 @@
 (ns llama.lib
-  (:use [clojure.java.io :only [file]])
+  (:use [clojure.java.io :only [file]]
+        [clojure.string :only [join]])
   (:require [clojure.tools.logging :as logger]
             [seesaw [core :as ssw]
                     [chooser :as ssw-chooser]])
@@ -60,9 +61,9 @@
                     (.exec runtime command))]
     (.addShutdownHook runtime (Thread. #(.destroy process)))
     {:process process
-     :input_stream (InputStreamReader. (.getInputStream process))
-     :output_stream (OutputStreamWriter. (.getOutputStream process))
-     :error_stream (InputStreamReader. (.getErrorStream process))}))
+     :input-stream (InputStreamReader. (.getInputStream process))
+     :output-stream (OutputStreamWriter. (.getOutputStream process))
+     :error-stream (InputStreamReader. (.getErrorStream process))}))
 
 (defn write-stream [stream str]
   (.write stream str)
@@ -140,13 +141,37 @@
                         :handler (fn [_]
                                    (ssw-chooser/choose-file 
                                      parent :type "Ok" :selection-mode :dirs-only
-                                     :success-fn #(.setText dir (.getCanonicalPath %))))))
+                                     :success-fn (fn [_ f] (.setText dir (.getCanonicalPath f)))))))
         dialog (ssw/dialog :content panel :option-type :ok-cancel
                            :modal? true)]
     (if parent (.setLocationRelativeTo dialog parent))
     (.setResizable dialog false)
     (when (-> dialog ssw/pack! ssw/show!)
       (file (.getText dir) (.getText filename)))))
+
+(defn run-leiningen [project & args]
+  (let [p (start-process
+            (str 
+              "java -cp " (System/getProperty "java.class.path")
+              " clojure.main -") (:target-dir project))]
+    (.write (:output-stream p) (str "(use 'leiningen.core)(-main \"" (join " " args) "\")\""))
+    p))
+
+(defn write-stream-to-text [stream text-area]
+  (let [jdoc (.getDocument text-area)
+        text (atom "")]
+    (.start (Thread. (fn []
+                       (try
+                         (do
+                           (swap! text str (-> stream .read char str))
+                           (when (not (.ready stream))
+                             (ssw/invoke-now
+                               (.insertString jdoc (.getLength jdoc) @text nil)
+                               (.setCaretPosition text-area (.getLength jdoc)))
+                             (reset! text ""))
+                           (recur))
+                         ; this means that the stream is closed
+                         (catch java.lang.IllegalArgumentException _ )))))))
 
 (log :trace "finished loading")
 
