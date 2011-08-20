@@ -37,13 +37,18 @@
     (catch Exception e
       (log :error e (str "unable to save state " id)))))
 
-(let [states (atom [])]
+(let [states (atom {})]
   (defn defstate [id f]
-    (swap! states conj [(name id) f]))
+    (swap! states assoc (name id) f))
   
   (defn save-states []
     (doseq [[id f] @states]
-      (save-state id (f)))))
+      (save-state id (f))))
+
+  (defn save-defined-state [id]
+    (if (contains? @states (name id))
+      (save-state id ((get @states (name id))))
+      (log :error (str "state not defined: " id)))))
 
 ;; beans
 
@@ -69,12 +74,17 @@
     (catch Exception e
       (log :error e (str "unable to save bean " id)))))
 
-(let [beans (atom [])]
+(let [beans (atom {})]
   (defn defbean [id b]
-    (swap! beans conj [(name id) b]))
+    (swap! beans assoc (name id) b))
 
   (defn save-bean-states []
     (doseq [[id b] @beans]
-      (save-bean id (b)))))
+      (save-bean id (b))))
+  
+  (defn save-defined-bean-state [id]
+    (if (contains? @beans (name id))
+      (save-bean id ((get @beans (name id))))
+      (log :error (str "bean not defined: " id)))))
 
 (log :trace "finished loading")
