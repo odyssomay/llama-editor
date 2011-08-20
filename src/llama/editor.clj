@@ -16,8 +16,12 @@
 
   (add-watch docs nil
     (fn [_ _ _ items]
-      (.removeAll tp)
-      (ssw/config! tp :tabs items)))
+      (let [i (.getSelectedIndex tabbed_pane)]
+        (.removeAll tp)
+        (ssw/config! tp :tabs items); (map #(assoc :tip % (:path %)) items))
+        (let [i (max 0 (min i (dec (.getTabCount tabbed_pane))))]
+          (.setSelectedIndex tabbed_pane i)
+          (.requestFocusInWindow (:text-pane (nth @docs i)))))))
 
   (defn selected-index [& _]
     (let [i (.getSelectedIndex tabbed_pane)]
@@ -39,14 +43,16 @@
           c (current-component)]
       (when (= (.getClientProperty c :save-indicator) :saved)
         (.putClientProperty c :save-indicator :changed)
-        (.setTitleAt tabbed_pane i (str (.getTitleAt tabbed_pane i) "*")))))
+        (swap! docs (fn [coll]
+                      (change-i i #(assoc % :title (str (:title %) "*")) coll))))))
 
   (defn set-save-indicator-saved! [& _]
     (let [i (.getSelectedIndex tabbed_pane)
           c (current-component)]
       (when (= (.getClientProperty c :save-indicator) :changed)
         (.putClientProperty c :save-indicator :saved)
-        (.setTitleAt tabbed_pane i (apply str (butlast (.getTitleAt tabbed_pane i)))))))
+        (swap! docs (fn [coll]
+                      (change-i i #(assoc % :title (apply str (butlast (:title %)))) coll))))))
 
   ;; argument is a map with :title :path
   (defn open-file [file]
@@ -183,11 +189,11 @@
 ;; states
 
   (state/defstate :editor-pane
-    (fn [] (map #(hash-map :title (:title %)
-                           :path (:path %)) @docs)))
+    (fn [] (map #(hash-map :path (:path %)) @docs)))
 
-  (doseq [d (state/load-state :editor-pane)]
-    (open-file d))
+  (doseq [{p :path} (state/load-state :editor-pane)]
+    (open-file {:path p 
+                :title (.getName (file p))}))
 )
 
 (log :trace "finished loading")
