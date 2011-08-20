@@ -2,7 +2,7 @@
   (:use (llama [document :only [create-text-area]]
                [syntax :only [parens-count]]
                [lib :only [start-process drop-nth log write-stream-to-text]]
-               [state :only [defstate load-state]])
+               [state :only [defstate load-state save-defined-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
@@ -35,8 +35,9 @@
       .flush)
     (merge process project)))
 
-(defn stop-repl [{:keys [process input-stream output-stream]}]
+(defn stop-repl [{:keys [process input-stream output-stream name] :as repl}]
 ;  (.interrupt thread)
+  (save-defined-state (str "repl-history-" (:name repl)))
   (.destroy process)
   (.close input-stream)
   (.close output-stream))
