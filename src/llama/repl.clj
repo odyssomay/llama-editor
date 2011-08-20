@@ -112,7 +112,7 @@
     (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
     (.add input_panel input_field java.awt.BorderLayout/SOUTH)
     (init-repl-text-fields repl output_pane error_pane)
-    (ssw/listen output_pane :mouse-entered (fn [_] (.requestFocusInWindow input_field)))))
+    (ssw/listen output_pane :mouse-moved (fn [_] (.requestFocusInWindow input_field)))))
 
 (declare close-current-repl)
 

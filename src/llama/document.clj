@@ -234,25 +234,26 @@
                    (.setRenderingHint RenderingHints/KEY_RENDERING
                                       RenderingHints/VALUE_RENDER_QUALITY))
                  (proxy-super paintComponent g)))
-        content (ssw/scrollable area)
+        content (org.fife.ui.rtextarea.RTextScrollPane. area true)
         manager (init-undoable-edits (.getDocument area))]
     (when (= type "clj")
       (.setAutoIndentEnabled area false)
       (let [ac (org.fife.ui.autocomplete.AutoCompletion. clojure-provider)]
         (.setShowDescWindow ac true)
         (.install ac area))
-      (let [fold-component (init-fold-component content area)]
-        (.setRowHeaderView content fold-component)
-        (.addDocumentListener document
-          (reify javax.swing.event.DocumentListener
-            (changedUpdate [_ _]
-              (.repaint fold-component))
-            (insertUpdate [_ _] )
-            (removeUpdate [_ _] )))))
+;      (let [fold-component (init-fold-component content area)]
+;        (.setRowHeaderView content fold-component)
+;        (.addDocumentListener document
+;          (reify javax.swing.event.DocumentListener
+;            (changedUpdate [_ _]
+;              (.repaint fold-component))
+;            (insertUpdate [_ _] )
+;            (removeUpdate [_ _] ))))
+      )
     (set-syntax-style area type) 
     (.setFont area (get-font))
     (.setText area text)
-    (ssw/listen area :mouse-entered 
+    (ssw/listen area :mouse-moved 
                 (fn [_] (if (.isEditable area)
                           (.requestFocusInWindow area))))
     (assoc file :content content
