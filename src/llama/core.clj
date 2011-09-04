@@ -32,4 +32,5 @@
         (state/save-bean-states)
         ;(System/exit 0)
         ))
-    (ssw/show! f)))
+    (ssw/show! f)
+    nil))
