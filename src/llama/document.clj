@@ -10,8 +10,6 @@
            javax.swing.event.DocumentEvent$EventType
            java.awt.RenderingHints))
 
-(log :trace "started loading")
-
 (defn get-font []
   (font (first (filter #(case %
                  "Lucida Console" true
@@ -75,7 +73,7 @@
   (case type
     "clj" (syntax-style "CLOJURE")
     "java" (syntax-style "JAVA")
-    nil))
+    (syntax-style "NONE")))
 
 (defn set-syntax-style [area type]
   (.setSyntaxEditingStyle area (type->syntax-style type)))
@@ -178,7 +176,14 @@
   (fold           [this line])
   (unfold         [this line]))
 
-(defn create-clojure-document []
+(defn file-type [obj]
+  (cond (:type obj) (:type obj)
+        (:path obj) (last (split (:path obj) #"\."))
+        :else nil))
+
+(defmulti text-model file-type)
+
+(defmethod text-model "clj" [obj]
   (let [folded-text (atom [])
         document (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument llama.document.FoldableDocument] [nil]
                    (insertString [offset text a]
@@ -216,14 +221,21 @@
                        (.remove this start end)
                        (.insertString this start (:text (first (filter #(= (:line %) line) @folded-text))) nil)
                        (swap! folded-text (fn [state] (remove #(= (:line %) line) state))))))]
+    (let [text (if (:path obj) (slurp (:path obj)) "")]
+      (.insertString document 0 text nil))
     document))
 
-(defn create-text-area [file]
-  (let [text (if (:path file) (slurp (:path file)) "")
-        type (cond (:type file) (:type file)
-                   (:path file) (last (split (:path file) #"\."))
-                   true nil)
-        document (if (= type "clj") (create-clojure-document) (org.fife.ui.rsyntaxtextarea.RSyntaxDocument. nil))
+(defmethod text-model :default [obj]
+  (let [d (org.fife.ui.rsyntaxtextarea.RSyntaxDocument. nil)]
+    (let [text (if (:path obj) (slurp (:path obj)) "")]
+      (.insertString d 0 text nil))
+    d))
+
+(defn text-delegate [obj]
+  (let [text (if (:path obj) (slurp (:path obj)) "")
+        type (file-type obj)
+        document (if (:model obj) 
+                   (:model obj) (text-model obj))
         area (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxTextArea] [document]
                (paintComponent [g]
                  (doto g 
@@ -252,12 +264,9 @@
       )
     (set-syntax-style area type) 
     (.setFont area (get-font))
-    (.setText area text)
     (ssw/listen area :mouse-moved 
                 (fn [_] (if (.isEditable area)
                           (.requestFocusInWindow area))))
-    (assoc file :content content
-                :text-pane area
-                :manager manager)))
-
-(log :trace "finished loading")
+    (assoc obj :content content
+               :text-pane area
+               :manager manager)))
