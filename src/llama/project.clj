@@ -20,14 +20,14 @@
 
 ;; data structure
 
-(def project-pane 
-  (let [p (ssw-mig/mig-panel)]
-    (.setBackground p (ssw-color/color 255 255 255))
-    p))
+;(def project-pane 
+;  (let [p (ssw-mig/mig-panel)]
+;    (.setBackground p (ssw-color/color 255 255 255))
+;    p))
 
 (def current-projects (atom []))
-(add-watch current-projects nil (fn [_ _ _ items]
-                                  (ssw/config! project-pane :items (map #(vec [(::project-tree %) "span"]) items))))
+;(add-watch current-projects nil (fn [_ _ _ items]
+;                                  (ssw/config! project-pane :items (map #(vec [(::project-tree %) "span"]) items))))
 
 (defn close-project [project]
   (swap! current-projects
@@ -71,7 +71,8 @@
     (let [p (lib/start-process command (:target-dir project))
           output-area (javax.swing.JTextArea. (str "=>" command "\n"))
           input-area (javax.swing.JTextField.)
-          dialog (ssw/dialog :content (ssw/border-panel :center output-area :south input-area)
+          dialog (ssw/dialog :content (ssw/border-panel :center (ssw/scrollable output-area) :south input-area)
+                             :size [500 :by 500]
                              :success-fn (fn [& _] (.destroy (:process p))))]
       (.setEditable output-area false)
       (.addActionListener input-area
@@ -174,6 +175,9 @@
 
 ;; state
 
+(defn project-view []
+  )
+
 (defn load-project [project]
   (swap! current-projects conj 
          (-> (create-new-project-tree project) 
@@ -192,8 +196,8 @@
     (-> (lein-core/read-project (.getCanonicalPath f))
         load-project)))
 
-(state/defstate :project-pane (fn [] (map :target-dir @current-projects)))
-(state/load-state :project-pane
+(state/defstate :projects (fn [] (map :target-dir @current-projects)))
+(state/load-state :projects
   #(doseq [project %]
      (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
 
