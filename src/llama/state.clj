@@ -4,8 +4,6 @@
   (:import (java.io BufferedInputStream BufferedOutputStream
                     FileInputStream FileOutputStream)))
 
-(log :trace "started loading")
-
 (def state-file (file "state"))
 (def beans-file (file state-file "beans"))
 
@@ -87,4 +85,3 @@
       (save-bean id ((get @beans (name id))))
       (log :error (str "bean not defined: " id)))))
 
-(log :trace "finished loading")

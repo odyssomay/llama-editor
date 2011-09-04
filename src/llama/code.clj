@@ -7,8 +7,6 @@
          [stitch :only [stitch-up]]])
   (:import (javax.swing JOptionPane)))
 
-(log :trace "started loading")
-
 (defn get-proxy-methods  
   "Get the methods from a proxy." 
   [proxy]
@@ -57,4 +55,3 @@
       regrow
       stitch-up))
 
-(log :trace "finished loading")

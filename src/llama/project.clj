@@ -16,8 +16,6 @@
                        [run :as lein-run]
                        [deps :as lein-deps])))
 
-(lib/log :trace "started loading")
-
 ;; data structure
 
 ;(def project-pane 
@@ -200,5 +198,3 @@
 (state/load-state :projects
   #(doseq [project %]
      (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
-
-(lib/log :trace "finished loading")

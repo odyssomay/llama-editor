@@ -2,8 +2,6 @@
     (:use [clojure.string :only (split split-lines)]
           (llama [lib :only [log]])))
 
-(log :trace "started loading")
-
 ;; p-count function
 
 (defn get-count-coll [in_str start end]
@@ -123,4 +121,3 @@
     (apply str (cons \newline
 		     (take indent (repeat \space))))))
 
-(log :trace "finished loading")

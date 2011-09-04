@@ -4,8 +4,6 @@
 ;	   (jsyntaxpane Token TokenType)
 	   (java.io StringReader)))
 
-(log :trace "started loading")
-
 ;; the only code used here is the SCANNER section below, the rest
 ;; is kept because of various reasons. 
 
@@ -136,5 +134,3 @@
 (let [lexer (ClojureLexer. (StringReader. ""))]
   (defn clj-highlight [text]
     (get-token-highlight text lexer)))
-
-(log :trace "finished loading")

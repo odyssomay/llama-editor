@@ -6,8 +6,6 @@
             (llama [document :as document]))
   (:import javax.swing.UIManager))
 
-(log :trace "started loading")
-
 (def ^{:private true} expanded-icon (UIManager/get "Tree.expandedIcon"))
 (def ^{:private true} collapsed-icon (UIManager/get "Tree.collapsedIcon"))
 
@@ -66,5 +64,3 @@ src/ex_proj/core.clj
   
   (defn -main [& args]
     ...)")
-
-(log :trace "finished loading")
