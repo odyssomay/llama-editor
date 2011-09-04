@@ -3,12 +3,16 @@
           (llama [document :only [text-model text-delegate]]
                  [lib :only [drop-nth change-i find-i log new-file-dialog]]
                  [syntax :only [indent]]
-                 [code :only [slamhound-text proxy-dialog]])
+                 [code :only [slamhound-text proxy-dialog]]
+                 [state :only [defstate load-state]])
           [clojure.java.io :only [file]])
     (:require (llama [state :as state])
               (seesaw [core :as ssw]
                       [chooser :as ssw-chooser]))
-  (:import java.awt.event.KeyEvent))
+  (:import java.awt.event.KeyEvent
+           (javax.swing.text DefaultEditorKit$CutAction
+                             DefaultEditorKit$CopyAction
+                             DefaultEditorKit$PasteAction)))
 
 (defprotocol tab-model-p 
   (add-tab [this tab])
@@ -152,6 +156,15 @@
 ;; states
 
 (def current-tabs (atom []))
+(defstate :editor-tabs
+  #(map :path @current-tabs))
+(load-state :editor-tabs
+  (fn [paths]
+    (reset! current-tabs 
+            (for [path paths]
+              (let [f (file path)]
+                {:path (.getCanonicalPath f)
+                 :title (.getName f)})))))
 
 (defn set-tabs [tp raw-items]
   (let [items (map text-delegate raw-items)] 
