@@ -9,8 +9,6 @@
            java.io.File
            (java.awt Color Font GraphicsEnvironment)))
 
-(logger/log :trace "started loading")
-
 (defn drop-nth [coll n]
   "Drop (remove) the n item in coll."
   (concat (take n coll) (drop (inc n) coll)))
@@ -126,7 +124,7 @@
    `(logger/log ~level ~msg))
   ([level e msg]
    `(logger/log ~level (str ~msg "\n    " 
-                            (.getMessage ~e) "\n        "
+                            ~e "\n        "
                             (apply str (interpose "\n        " 
                                                   (take 7 (.getStackTrace ~e))))
                             "\n"))))
@@ -146,7 +144,7 @@
                            :modal? true)]
     (if parent (.setLocationRelativeTo dialog parent))
     (.setResizable dialog false)
-    (when (-> dialog ssw/pack! ssw/show!)
+    (if (-> dialog ssw/pack! ssw/show!)
       (file (.getText dir) (.getText filename)))))
 
 (defn run-leiningen [project & args]
@@ -172,6 +170,3 @@
                            (recur))
                          ; this means that the stream is closed
                          (catch java.lang.IllegalArgumentException _ )))))))
-
-(log :trace "finished loading")
-
