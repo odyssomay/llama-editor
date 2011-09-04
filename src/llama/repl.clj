@@ -1,5 +1,5 @@
 (ns llama.repl
-  (:use (llama [document :only [create-text-area]]
+  (:use (llama [document :only [text-delegate]]
                [syntax :only [parens-count]]
                [lib :only [start-process drop-nth log write-stream-to-text]]
                [state :only [defstate load-state save-defined-state]])
@@ -14,11 +14,10 @@
     (javax.swing JTextArea)
     (java.awt.event KeyEvent KeyListener)))
 
-(log :trace "started loading")
-
 (defn start-repl [project]
   (let [classpath (if (::anonymous project)
-                    (.getPath (ClassLoader/getSystemResource "clojure-1.2.1.jar"))
+                    (System/getProperty "java.class.path")
+                    ;(.getPath (ClassLoader/getSystemResource "clojure-1.2.1.jar"))
                     (lein-classpath/get-classpath-string project))
         repl_url (ClassLoader/getSystemResource "repl.clj")
         repl_source 
@@ -47,7 +46,7 @@
   (.flush (:output-stream repl)))
 
 (defn init-repl-input-field [repl repl_pane]
-  (let [input_field (:text-pane (create-text-area {:type "clj"}))
+  (let [input_field (:text-pane (text-delegate {:type "clj"}))
         jdoc (.getDocument repl_pane) 
         reset-text? (atom false)
         input_text (atom "")
@@ -119,7 +118,7 @@
 
 (defn init-new-repl [project]
   (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
-        jtext_pane (:text-pane (create-text-area {:type "clj"}))
+        jtext_pane (:text-pane (text-delegate {:type "clj"}))
         err_text (javax.swing.JTextArea.) 
         input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))
@@ -154,35 +153,54 @@
      :path (:target-dir project)
      :title (:name project)}))
 
-(let [tabbed_pane (ssw/tabbed-panel :placement :right)
-      current_repls (atom [])]
-  (add-watch current_repls nil (fn [_ _ _ items] 
-                                 (.removeAll tabbed_pane)
-                                 (ssw/config! tabbed_pane :tabs items)))
+(defn add-repls-listener [tp repls-atom]
+  (add-watch repls-atom nil (fn [_ _ _ items] 
+                              (.removeAll tp)
+                              (ssw/config! tp :tabs items))))
 
-  (defn selected-index [& _] (.getSelectedIndex tabbed_pane))
+(defn create-new-repl [tp repls-atom project]
+  (let [tab (init-new-repl project)]
+    (swap! repls-atom conj tab)
+    (.setSelectedComponent tp (:content tab))))
 
-  (defn current-repl [& _]
-    (nth @current_repls (.getSelectedIndex tabbed_pane) nil))
+(defn repl-view []
+  (let [repls-atom (atom [])
+        tp (ssw/tabbed-panel :placement :right)
+        m (ssw/menubar
+            :items
+            [(ssw/menu :text "new"
+               :items [(ssw/action :name "experiment"
+                                   :handler (fn [_] (create-new-repl tp repls-atom {:name "exp" ::anonymous true})))])])]
+    (add-repls-listener tp repls-atom)
+    {:content tp :menu m}))
 
-  (defn create-new-repl [project]
-    (let [tab (init-new-repl project)]
-      (swap! current_repls conj tab)
-      (.setSelectedComponent tabbed_pane (:content tab))))
+;(let [tabbed_pane (ssw/tabbed-panel :placement :right)
+;      current_repls (atom [])]
+;  (add-watch current_repls nil (fn [_ _ _ items] 
+;                                 (.removeAll tabbed_pane)
+;                                 (ssw/config! tabbed_pane :tabs items)))
 
-  (defn create-new-anonymous-repl [& _]
-    (create-new-repl {:name "anonymous" ::anonymous true}))
+;  (defn selected-index [& _] (.getSelectedIndex tabbed_pane))
 
-  (defn close-current-repl [& _]
-    (swap! current_repls drop-nth (.getSelectedIndex tabbed_pane)))
+;  (defn current-repl [& _]
+;    (nth @current_repls (.getSelectedIndex tabbed_pane) nil))
 
-  (def repl-pane tabbed_pane)
+;  (defn create-new-repl [project]
+;    (let [tab (init-new-repl project)]
+;      (swap! current_repls conj tab)
+;      (.setSelectedComponent tabbed_pane (:content tab))))
 
-  (defstate :repl-pane #(map :path @current_repls))
-  (load-state :repl-pane (fn [paths]
-                           (doseq [project (map (comp lein-core/read-project #(.getCanonicalPath (cio/file % "project.clj")))
-                                                paths)]
-                                  (create-new-repl project))))
-)
+;  (defn create-new-anonymous-repl [& _]
+;    (create-new-repl {:name "anonymous" ::anonymous true}))
 
-(log :trace "finished loading")
+  (defn close-current-repl [& _])
+;    (swap! current_repls drop-nth (.getSelectedIndex tabbed_pane)))
+
+;  (def repl-pane tabbed_pane)
+
+;  (defstate :repl-pane #(map :path @current_repls))
+;  (load-state :repl-pane (fn [paths]
+;                           (doseq [project (map (comp lein-core/read-project #(.getCanonicalPath (cio/file % "project.clj")))
+;                                                paths)]
+;                                  (create-new-repl project))))
+
