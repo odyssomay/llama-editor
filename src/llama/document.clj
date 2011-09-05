@@ -1,5 +1,6 @@
 (ns llama.document
   (:use (llama 
+          [config :only [listen-to-option get-option]]
           [syntax :only [indent parens-count find-unmatched-rparens]] 
           [lib :only [*available-fonts* color font log]])
         [clojure.string :only [split split-lines join]]
@@ -263,7 +264,18 @@
 ;            (removeUpdate [_ _] ))))
       )
     (set-syntax-style area type) 
-    (.setFont area (get-font))
+    (listen-to-option :editor :font
+      (fn [_ font-name] (.setFont area (java.awt.Font. font-name java.awt.Font/PLAIN 
+                                                       (get-option :editor :font-size)))))
+    (listen-to-option :editor :font-size
+      (fn [_ size] (.setFont area (java.awt.Font. (get-option :editor :font) java.awt.Font/PLAIN
+                                                  size))))
+    (listen-to-option :editor :numbering?
+      (fn [_ enabled?] (.setLineNumbersEnabled content enabled?)))
+    (listen-to-option :editor :highlight-line?
+      (fn [_ enabled?] (.setHighlightCurrentLine area enabled?)))
+    (listen-to-option :editor :wrap?
+      (fn [_ enabled?] (.setLineWrap area enabled?)))
     (ssw/listen area :mouse-moved 
                 (fn [_] (if (.isEditable area)
                           (.requestFocusInWindow area))))

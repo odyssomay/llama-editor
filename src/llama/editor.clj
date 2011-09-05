@@ -1,6 +1,7 @@
 (ns llama.editor
     (:use clj-arrow.arrow
           (llama [document :only [text-model text-delegate]]
+                 [config :only [show-options-dialog]]
                  [lib :only [drop-nth change-i find-i log new-file-dialog]]
                  [syntax :only [indent]]
                  [code :only [slamhound-text proxy-dialog]]
@@ -247,7 +248,10 @@
                                     :handler (fn [_] (change-indent (current-text-area) :left)))]
                   (.putValue a javax.swing.Action/ACCELERATOR_KEY
                              (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_LEFT KeyEvent/ALT_DOWN_MASK))
-                  a)])])]
+                  a)
+                (ssw/action :name "Preferences"
+                            :handler (fn [_] (show-options-dialog)))
+                ])])]
     (add-tabs-listener tmodel tabs-atom)
     (set-tabs tp @tabs-atom)
     (swap! tabs-atom identity)

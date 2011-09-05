@@ -1,5 +1,6 @@
 (ns llama.core
-  (:use (llama [editor :only [editor-view]]
+  (:use (llama [config :only [init-options]]
+               [editor :only [editor-view]]
                [repl :only [repl-view]]))
   (:require dynamik
             [llama.state :as state]
@@ -15,6 +16,7 @@
     :types ["editor" "repl" "project pane"]))
 
 (defn llama-editor []
+    (init-options)
   (let [c (main-area)
         f (ssw/frame :content c :title "llama-editor" :size [800 :by 500])]
     (state/defstate :main-layout #(.getTileLayout c))
