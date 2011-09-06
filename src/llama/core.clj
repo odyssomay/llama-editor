@@ -1,5 +1,6 @@
 (ns llama.core
-  (:use (llama [config :only [init-options]]
+  (:use (llama [config :only [init-options listen-to-ui-update]]
+               [ui :only [init-ui]]
                [editor :only [editor-view]]
                [repl :only [repl-view]]))
   (:require dynamik
@@ -16,7 +17,8 @@
     :types ["editor" "repl" "project pane"]))
 
 (defn llama-editor []
-    (init-options)
+  (init-options)
+  (init-ui)
   (let [c (main-area)
         f (ssw/frame :content c :title "llama-editor" :size [800 :by 500])]
     (state/defstate :main-layout #(.getTileLayout c))
@@ -34,5 +36,7 @@
         (state/save-bean-states)
         ;(System/exit 0)
         ))
+    (listen-to-ui-update f)
     (ssw/show! f)
     nil))
+

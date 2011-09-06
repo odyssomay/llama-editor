@@ -7,20 +7,8 @@
              [graphics :as ssw-graphics]
              [mig :as ssw-mig]]))
 
-(defn load-config-files [& files]
-  (dorun (map #(load (str "/config/" %)) files)))
-
-(defn edit-config-order [& [parent]]
-  )
-
-(defn load-config []
-  (apply load-config-files
-         (map str
-              (read-string 
-                (str "[" (slurp (.getPath (ClassLoader/getSystemResource "config-order")))
-                     "]")))))
-
-;; options
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; options datastructure
 
 (def options (atom {}))
 (defstate :options #(deref options))
@@ -56,7 +44,9 @@
   (let [saved (load-state :options)]
     (reset! options
       (if saved saved
-        {:color
+        {:general
+         {:native-look? false}
+         :color
          {:background [26 26 26]
           :text [0 0 0]}
          :editor 
@@ -73,10 +63,53 @@
                                   nil) *available-fonts*))
           :font-size 11}}))))
 
-;; gui
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; utils
+
+(defn checkbox [text class-id id]
+  (let [c (ssw/checkbox :text text :selected? (get-option class-id id))]
+    (ssw/listen c :selection
+      (fn [& _] (set-option class-id id (.isSelected c))))
+    c))
+
+(defn combobox [choices class-id id]
+  (let [cb (ssw/combobox :model choices)]
+    (.setSelectedItem cb (get-option class-id id))
+    (ssw/listen cb :selection
+      (fn [& _] (set-option class-id id (.getSelectedItem cb))))
+    cb))
+
+(defn number-spinner [init-val minimum maximum class-id id]
+  (let [m (javax.swing.SpinnerNumberModel. init-val minimum maximum 1)
+        s (javax.swing.JSpinner. m)]
+    (-> s
+      .getEditor
+      .getTextField
+      (.setColumns 7))
+    (.setValue m (get-option class-id id))
+    (.addChangeListener m
+      (reify javax.swing.event.ChangeListener
+        (stateChanged [_ _]
+          (set-option class-id id (.getValue m)))))
+    s))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; general
+
+(defn general-options []
+  (let [p (ssw-mig/mig-panel :items [[(checkbox "use native look" :general :native-look?)]])]
+    p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; colors
+
+(let [components (atom [])]
+  (defn listen-to-ui-update [component]
+    (swap! components conj component))
+
+  (defn fire-ui-update []
+    (doseq [c @components]
+      (javax.swing.SwingUtilities/updateComponentTreeUI c))))
 
 (defn color-preview-component [id & keys]
   (let [arc-width 5
@@ -111,14 +144,16 @@
         (stateChanged [_ _]
           (let [color (.getColor cc)]
             (set-option :color id [(.getRed color) (.getGreen color) (.getBlue color)])
-            (doseq [k keys]
-              (javax.swing.UIManager/put k color))
+            ;(doseq [k keys]
+            ;  (javax.swing.UIManager/put k color))
             (.repaint component)
-            (.repaint cc)))))
+            ;(.repaint cc)
+            ))))
     (if-let [[r g b] (get-option :color id)]
       (.setColor cc (java.awt.Color. r g b)))
     (ssw/listen component :mouse-clicked
       (fn [& _] (-> frame ssw/pack! ssw/show!)))
+    (listen-to-ui-update cc)
     component))
 
 (defn generate-color-options [& options]
@@ -136,33 +171,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; editor
 
-(defn checkbox [text id]
-  (let [c (ssw/checkbox :text text :selected? (get-option :editor id))]
-    (ssw/listen c :selection
-      (fn [& _] (set-option :editor id (.isSelected c))))
-    c))
-
-(defn combobox [choices id]
-  (let [cb (ssw/combobox :model choices)]
-    (.setSelectedItem cb (get-option :editor id))
-    (ssw/listen cb :selection
-      (fn [& _] (set-option :editor id (.getSelectedItem cb))))
-    cb))
-
-(defn number-spinner [init-val minimum maximum id]
-  (let [m (javax.swing.SpinnerNumberModel. init-val minimum maximum 1)
-        s (javax.swing.JSpinner. m)]
-    (-> s
-      .getEditor
-      .getTextField
-      (.setColumns 7))
-    (.setValue m (get-option :editor id))
-    (.addChangeListener m
-      (reify javax.swing.event.ChangeListener
-        (stateChanged [_ _]
-          (set-option :editor id (.getValue m)))))
-    s))
-
 (defn is-monospaced? [font-name]
   (let [fm (.getFontMetrics (ssw/label) (java.awt.Font. font-name java.awt.Font/PLAIN 10))]
     (= (.charWidth fm \M) (.charWidth fm \i) (.charWidth fm \.))))
@@ -171,10 +179,10 @@
   (ssw-mig/mig-panel :constraints ["fillx" "" ""]
     :items [["View"]                                  
               ["Font" "wrap"]
-            [(checkbox "text wrapping" :wrap?)]       
-              [(checkbox "monospaced" :monospaced?) "wrap"]
-            [(checkbox "line numbering" :numbering?)] 
-              [(let [cb (combobox *available-fonts* :font)]
+            [(checkbox "text wrapping" :editor :wrap?)] 
+              [(checkbox "monospaced" :editor :monospaced?) "wrap"]
+            [(checkbox "line numbering" :editor :numbering?)] 
+              [(let [cb (combobox *available-fonts* :editor :font)]
                  (listen-to-option :editor :monospaced?
                                    (fn [_ item]
                                      (let [selected (.getSelectedItem cb)]
@@ -182,19 +190,25 @@
                                          (filter (if item is-monospaced? identity) *available-fonts*))
                                        (.setSelectedItem cb selected))))
                  cb) "wrap"]
-            [(checkbox "highlight current line" :highlight-line?)] 
-              ["size" "split 2"] [(number-spinner 10 1 20 :font-size) "wrap"]]))
+            [(checkbox "highlight current line" :editor :highlight-line?)] 
+              ["size" "split 2"] [(number-spinner 10 1 20 :editor :font-size) "wrap"]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; options UI
 
 (defn options-panel []
-  (ssw/tabbed-panel 
-    :tabs [{:title "color" :content (color-options)}
-           {:title "editor" :content (editor-options)}]))
+  (let [tp (ssw/tabbed-panel 
+             :tabs [{:title "general" :content (general-options)}
+                    {:title "color" :content (color-options)}
+                    {:title "editor" :content (editor-options)}])]
+    (listen-to-ui-update tp)
+    tp))
 
 (def options-dialog
   (memoize 
     #(ssw/frame :content (options-panel) :size [700 :by 300] :title "Preferences")))
 
-(listen-to-option :color (fn [_ _] (.updateUI (options-panel))))
+;(listen-to-option :color (fn [_ _] (.updateUI (options-panel))))
 
 (defn show-options-dialog []
   (-> (options-dialog) ssw/show!))
