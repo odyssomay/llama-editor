@@ -198,7 +198,7 @@
       (fn [coll]
         (change-i (selected-index this) f coll)))))
 
-(defn tabs-listener [tmodel f]
+(defn tab-listener [tmodel f]
   (let [tp (:tp tmodel)
         mem-text-delegate (memoize f)
         set-tabs

@@ -2,7 +2,11 @@
     (:use clj-arrow.arrow
           (llama [document :only [text-model text-delegate]]
                  [config :only [show-options-dialog]]
-                 [util :only [drop-nth change-i find-i log new-file-dialog]]
+                 [util :only [drop-nth change-i find-i log 
+                              new-file-dialog tab-listener
+                              add-tab remove-current-tab
+                              current-tab selected-index
+                              update-current-tab]]
                  [syntax :only [indent]]
                  [code :only [slamhound-text proxy-dialog]]
                  [state :only [defstate load-state]])
@@ -10,7 +14,8 @@
     (:require (llama [state :as state])
               (seesaw [core :as ssw]
                       [chooser :as ssw-chooser]))
-  (:import java.awt.event.KeyEvent
+  (:import llama.util.tab-model
+           java.awt.event.KeyEvent
            (javax.swing.text DefaultEditorKit$CutAction
                              DefaultEditorKit$CopyAction
                              DefaultEditorKit$PasteAction)))
@@ -188,7 +193,7 @@
                 (ssw/action :name "Preferences"
                             :handler (fn [_] (show-options-dialog)))
                 ])])]
-    (let [listener (tabs-listener tmodel)]
+    (let [listener (tab-listener tmodel text-delegate)]
       (add-watch tabs-atom (gensym) listener)
       (listener nil nil [] @tabs-atom))
     {:content tp :menu m}))
