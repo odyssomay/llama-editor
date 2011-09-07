@@ -15,31 +15,6 @@
                              DefaultEditorKit$CopyAction
                              DefaultEditorKit$PasteAction)))
 
-(defprotocol tab-model-p 
-  (add-tab [this tab])
-  (remove-current-tab [this])
-  (current-tab [this])
-  (selected-index [this])
-  (update-current-tab [this f]))
-
-(defrecord tab-model [tp tabs]
-  tab-model-p
-  (add-tab [this tab] (swap! tabs conj tab))
-  (remove-current-tab [this]
-    (when-let [i (selected-index this)]
-      (swap! tabs #(drop-nth % i))))
-  (current-tab [this]
-    (if-let [i (selected-index this)]
-      (nth @tabs i nil)))
-  (selected-index [this]
-    (let [i (.getSelectedIndex tp)]
-      (if-not (= i -1)
-        i)))
-  (update-current-tab [this f]
-    (swap! tabs
-      (fn [coll]
-        (change-i (selected-index this) f coll)))))
-
 (defn set-save-indicator-changed [tmodel]
   (let [tab (current-tab tmodel)]
     (when (= (:save-indicator tab) :saved)
@@ -166,23 +141,6 @@
               (let [f (file path)]
                 {:path (.getCanonicalPath f)
                  :title (.getName f)})))))
-
-(defn tabs-listener [tmodel]
-  (let [tp (:tp tmodel)
-        mem-text-delegate (memoize text-delegate)
-        set-tabs
-        (fn [raw-items]
-          (let [items (map mem-text-delegate raw-items)]
-            (.removeAll tp)
-            (doseq [{:keys [content title path]} items]
-              (.addTab tp title nil content path))))]
-    (fn [_ _ old-items raw-items]
-      (if-not (= (count old-items) (count raw-items))
-        (set-tabs raw-items)
-        (doseq [i (range (.getTabCount tp))]
-          (when-let [{:keys [path title]} (nth raw-items i nil)]
-            (.setTitleAt tp i title)
-            (.setToolTipTextAt tp i path)))))))
 
 (defn editor-view []
   (let [tabs-atom current-tabs
