@@ -1,6 +1,6 @@
 (ns llama.code
   (:use [clojure.string :only (split join)]
-        [llama.lib :only [log]]
+        [llama.util :only [log]]
         [slam.hound 
          [asplode :only [asplode]]
          [regrow :only [regrow]]

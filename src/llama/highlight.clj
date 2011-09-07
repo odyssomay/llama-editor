@@ -1,5 +1,5 @@
 (ns llama.highlight
-  (:use (llama lib))
+  (:use (llama util))
   (:import (llama.lexer ClojureLexer)
 ;	   (jsyntaxpane Token TokenType)
 	   (java.io StringReader)))

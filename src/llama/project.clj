@@ -6,7 +6,7 @@
                    [error :as error]
                    [repl :as repl]
                    [state :as state]
-                   [lib :as lib])
+                   [util :as util])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
                     [tree :as ssw-tree]
@@ -33,6 +33,7 @@
            (remove #(= (:target-dir %)
                        (:target-dir project)) items))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; running
 
 (defn run-project [project]
@@ -66,7 +67,7 @@
 
 (defn run-project-command [project]
   (if-let [command (ssw/input "Enter command")]
-    (let [p (lib/start-process command (:target-dir project))
+    (let [p (util/start-process command (:target-dir project))
           output-area (javax.swing.JTextArea. (str "=>" command "\n"))
           input-area (javax.swing.JTextField.)
           dialog (ssw/dialog :content (ssw/border-panel :center (ssw/scrollable output-area) :south input-area)
@@ -79,11 +80,12 @@
             (let [text (.getText input-area)]
               (.write (:output-stream p) text)
               (.append output-area text)))))
-      (lib/write-stream-to-text (:input-stream p) output-area)
-      (lib/write-stream-to-text (:error-stream p) output-area)
+      (util/write-stream-to-text (:input-stream p) output-area)
+      (util/write-stream-to-text (:error-stream p) output-area)
       (ssw/listen dialog :window-closing (fn [& _] (.destroy (:process p))))
       (ssw/show! dialog))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; menu
 
 (defn create-project-menu [project]
@@ -125,6 +127,7 @@
                                             (.delete selected_file)
                                             (update-tree)))])]))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; model
 
 (defrecord custom-file [file]
@@ -142,6 +145,7 @@
                     (sort-by #(.getName %) (get groups false))))))
     (custom-file. (file path))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cell renderer
 
 (defn set-icon [c icon]
@@ -159,10 +163,12 @@
                                         nil))
                                     c))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; project tree
 
 (defn create-new-project-tree [project]
-  (let [tc (javax.swing.JTree. (create-file-tree-model (:target-dir project)))
+  (let [model (::model project)
+        tc (javax.swing.JTree. (if model model (create-file-tree-model (:target-dir project))))
         project (assoc project ::project-tree tc)
         project-menu (create-project-menu project)
         update-tree (fn [& _] (.updateUI tc))
@@ -172,20 +178,19 @@
     project))
 
 ;; state
-
-(defn project-view []
-  )
-
 (defn load-project [project]
-  (swap! current-projects conj 
-         (-> (create-new-project-tree project) 
-             (assoc ::project-thread (atom nil)))))
+  (swap! projects conj
+         (merge project 
+                {::model (create-file-tree-model (:target-dir project))
+                 ::project-thread (atom nil)})))
+;         (-> (create-new-project-tree project) 
+;             (assoc ::project-thread (atom nil)))))
 
 (defn create-new-project [f]
   (llama-new/new-project (.getName f) (.getPath f)))
 
 (defn create-and-load-new-project [& _]
-  (when-let [f (lib/new-file-dialog)]
+  (when-let [f (util/new-file-dialog)]
     (create-new-project f)
     (load-project (lein-core/read-project (.getCanonicalPath (file f "project.clj"))))))
 
@@ -198,3 +203,11 @@
 (state/load-state :projects
   #(doseq [project %]
      (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
+
+;(def projects (atom []))
+
+;(defn project-view []
+;  (let [
+;  )
+
+

@@ -1,6 +1,6 @@
 (ns llama.syntax
     (:use [clojure.string :only (split split-lines)]
-          (llama [lib :only [log]])))
+          (llama [util :only [log]])))
 
 ;; p-count function
 

@@ -2,7 +2,7 @@
   (:use (llama 
           [config :only [listen-to-option get-option]]
           [syntax :only [indent parens-count find-unmatched-rparens]] 
-          [lib :only [*available-fonts* color font log]])
+          [util :only [*available-fonts* color font log]])
         [clojure.string :only [split split-lines join]]
         [seesaw.invoke :only [invoke-later invoke-now]]
         [seesaw.graphics :only [anti-alias style draw polygon circle rect]])

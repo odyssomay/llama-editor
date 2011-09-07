@@ -1,6 +1,6 @@
 (ns llama.config
   (:use [llama 
-         [lib :only [log *available-fonts* font find-i]]
+         [util :only [log *available-fonts* font find-i]]
          [state :only [defstate load-state]]])
   (:require [seesaw 
              [core :as ssw]

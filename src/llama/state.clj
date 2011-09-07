@@ -1,6 +1,6 @@
 (ns llama.state
   (:use [clojure.java.io :only [file]]
-        [llama [lib :only [log]]])
+        [llama [util :only [log]]])
   (:import (java.io BufferedInputStream BufferedOutputStream
                     FileInputStream FileOutputStream)))
 

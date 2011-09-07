@@ -1,6 +1,6 @@
 (ns llama.error
   (:use [clojure.string :only [split-lines]]
-        (llama [lib :only [log]]))
+        (llama [util :only [log]]))
   (:require (seesaw [core :as ssw]
                     [mig :as ssw-mig])
             (llama [document :as document]))

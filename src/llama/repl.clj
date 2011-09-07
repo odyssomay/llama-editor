@@ -1,7 +1,7 @@
 (ns llama.repl
   (:use (llama [document :only [text-delegate]]
                [syntax :only [parens-count]]
-               [lib :only [start-process drop-nth log write-stream-to-text]]
+               [util :only [start-process drop-nth log write-stream-to-text]]
                [state :only [defstate load-state save-defined-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])

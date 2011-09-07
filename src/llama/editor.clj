@@ -2,7 +2,7 @@
     (:use clj-arrow.arrow
           (llama [document :only [text-model text-delegate]]
                  [config :only [show-options-dialog]]
-                 [lib :only [drop-nth change-i find-i log new-file-dialog]]
+                 [util :only [drop-nth change-i find-i log new-file-dialog]]
                  [syntax :only [indent]]
                  [code :only [slamhound-text proxy-dialog]]
                  [state :only [defstate load-state]])
@@ -167,15 +167,6 @@
                 {:path (.getCanonicalPath f)
                  :title (.getName f)})))))
 
-;(defn set-tabs [tp raw-items]
-;  (let [items (map text-delegate raw-items)] 
-;    (.removeAll tp)
-;    (doseq [{:keys [content title path]} items]
-;      (.addTab tp title nil content path)
-;   )
-;    ;(ssw/config! tp :tabs items)
-;    ))
-
 (defn tabs-listener [tmodel]
   (let [tp (:tp tmodel)
         mem-text-delegate (memoize text-delegate)
@@ -192,25 +183,6 @@
           (when-let [{:keys [path title]} (nth raw-items i nil)]
             (.setTitleAt tp i title)
             (.setToolTipTextAt tp i path)))))))
-
-;        (let [tp (:tp tmodel)
-;              items (map text-delegate raw-items)
-              ;(for [t raw-items]
-                    ;  (if (contains? t :content)
-                    ;    t
-                    ;    (text-delegate t)))
-;              i (selected-index tmodel)
-;              selected-c (:content (current-tab tmodel))
-;              ]
-;          (.removeAll tp)
-;          (ssw/config! tp :tabs items)
-          ; (map #(assoc :tip % (:path %)) items))
-          ;(if (some (partial = selected-c) (map :content items))
-          ;  (do (.setSelectedComponent tp selected-c)
-          ;      (.requestFocusInWindow selected-c))
-            ;(.setSelectedIndex tp (max 0 (min (dec (.getTabCount tp)) i)))
-            ;)
-;          )))))
 
 (defn editor-view []
   (let [tabs-atom current-tabs
