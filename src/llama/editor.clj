@@ -167,25 +167,31 @@
                 {:path (.getCanonicalPath f)
                  :title (.getName f)})))))
 
-(defn set-tabs [tp raw-items]
-  (let [items (map text-delegate raw-items)] 
-    (.removeAll tp)
-    (doseq [{:keys [content title path]} items]
-      (.addTab tp title nil content path)
-   )
-    ;(ssw/config! tp :tabs items)
-    ))
+;(defn set-tabs [tp raw-items]
+;  (let [items (map text-delegate raw-items)] 
+;    (.removeAll tp)
+;    (doseq [{:keys [content title path]} items]
+;      (.addTab tp title nil content path)
+;   )
+;    ;(ssw/config! tp :tabs items)
+;    ))
 
-(defn add-tabs-listener [tmodel tab-atom]
-  (add-watch tab-atom (gensym)
+(defn tabs-listener [tmodel]
+  (let [tp (:tp tmodel)
+        mem-text-delegate (memoize text-delegate)
+        set-tabs
+        (fn [raw-items]
+          (let [items (map mem-text-delegate raw-items)]
+            (.removeAll tp)
+            (doseq [{:keys [content title path]} items]
+              (.addTab tp title nil content path))))]
     (fn [_ _ old-items raw-items]
-      (let [tp (:tp tmodel)]
-        (if-not (= (count old-items) (count raw-items))
-          (set-tabs tp raw-items)
-          (doseq [i (range (.getTabCount tp))]
-            (when-let [{:keys [path title]} (nth raw-items i nil)]
-              (.setTitleAt tp i title)
-              (.setToolTipTextAt tp i path))))))))
+      (if-not (= (count old-items) (count raw-items))
+        (set-tabs raw-items)
+        (doseq [i (range (.getTabCount tp))]
+          (when-let [{:keys [path title]} (nth raw-items i nil)]
+            (.setTitleAt tp i title)
+            (.setToolTipTextAt tp i path)))))))
 
 ;        (let [tp (:tp tmodel)
 ;              items (map text-delegate raw-items)
@@ -252,7 +258,7 @@
                 (ssw/action :name "Preferences"
                             :handler (fn [_] (show-options-dialog)))
                 ])])]
-    (add-tabs-listener tmodel tabs-atom)
-    (set-tabs tp @tabs-atom)
-    (swap! tabs-atom identity)
+    (let [listener (tabs-listener tmodel)]
+      (add-watch tabs-atom (gensym) listener)
+      (listener nil nil [] @tabs-atom))
     {:content tp :menu m}))
