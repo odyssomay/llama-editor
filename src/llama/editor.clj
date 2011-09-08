@@ -153,19 +153,22 @@
         current-text-area (fn []
                             (.getTextArea (.getSelectedComponent tp)))
         action-fn
-        (fn [id]
+        (fn [& [id v]]
           (case id
             :new            (new-file tmodel)
-            :open           (open-and-choose-file tmodel)
+            :open           (if v 
+                              (open-file tmodel v)
+                              (open-and-choose-file tmodel))
             :save           (save tmodel)
             :save-as        (save-as tmodel)
-            :remove-current (remove-current-tab tmodel)
+            :remove-current-tab 
+                            (remove-current-tab tmodel)
             :undo           (undo tmodel)
             :redo           (redo tmodel)
             :indent         (indent-selection (current-text-area))
             :indent-right   (change-indent (current-text-area :right))
-            :indent-left    (change-indent (current-text-area :left)))
-          (log :error (str "action not supported by editor: " id)))]
+            :indent-left    (change-indent (current-text-area :left))
+            (log :error (str "action not supported by editor: " id))))]
     (let [listener (tab-listener tmodel 
                      (fn [raw-tab]
                        (let [tab (text-delegate raw-tab)]
