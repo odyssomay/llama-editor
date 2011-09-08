@@ -30,18 +30,21 @@
 
 (defn open-file [tmodel file]
   (try 
-    (if-let [i (find-i (:path file) (map :path @(:tabs tmodel)))]
-      (.setSelectedIndex (:tp tmodel) i)
-      (let [tab (merge (text-delegate file) 
-                       {:save-indicator :saved
-                        :model (text-model file)})]
-        (.addDocumentListener 
-          (:model tab)
-          (reify javax.swing.event.DocumentListener
-            (changedUpdate [_ e] (set-save-indicator-changed tmodel))
-            (insertUpdate [_ e] )
-            (removeUpdate [_ e] )))
-        (add-tab tmodel tab)))
+    (let [file (if (map? file) file 
+                 {:title (.getName file) 
+                  :path (.getCanonicalPath file)})]
+      (if-let [i (find-i (:path file) (map :path @(:tabs tmodel)))]
+        (.setSelectedIndex (:tp tmodel) i)
+        (let [tab (merge (text-delegate file) 
+                         {:save-indicator :saved
+                          :model (text-model file)})]
+          (.addDocumentListener 
+            (:model tab)
+            (reify javax.swing.event.DocumentListener
+              (changedUpdate [_ e] (set-save-indicator-changed tmodel))
+              (insertUpdate [_ e] )
+              (removeUpdate [_ e] )))
+          (add-tab tmodel tab))))
     (catch Exception e
       (log :error e (str "failed to open file")))))
 
