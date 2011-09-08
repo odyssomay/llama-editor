@@ -277,7 +277,8 @@
     (listen-to-option :editor :wrap?
       (fn [_ enabled?] (.setLineWrap area enabled?)))
     (ssw/listen area :mouse-moved 
-                (fn [_] (if (.isEditable area)
+                (fn [_] (if (and (.isEditable area)
+                                 (get-option :general :mouse-focus))
                           (.requestFocusInWindow area))))
     (assoc obj :content content
                :text-pane area

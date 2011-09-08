@@ -45,7 +45,8 @@
     (reset! options
       (if saved saved
         {:general
-         {:native-look? false}
+         {:native-look? false
+          :mouse-focus false}
          :color
          {:background [26 26 26]
           :text [0 0 0]}
@@ -97,7 +98,8 @@
 ;; general
 
 (defn general-options []
-  (let [p (ssw-mig/mig-panel :items [[(checkbox "use native look" :general :native-look?)]])]
+  (let [p (ssw-mig/mig-panel :items [[(checkbox "use native look" :general :native-look?) "wrap"]
+                                     [(checkbox "mouse focus" :general :mouse-focus) "wrap"]])]
     p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
