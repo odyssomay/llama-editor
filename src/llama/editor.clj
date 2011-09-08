@@ -1,24 +1,20 @@
 (ns llama.editor
-    (:use clj-arrow.arrow
-          (llama [document :only [text-model text-delegate]]
-                 [config :only [show-options-dialog]]
-                 [util :only [drop-nth change-i find-i log 
-                              new-file-dialog tab-listener
-                              add-tab remove-current-tab
-                              current-tab selected-index
-                              update-current-tab]]
-                 [syntax :only [indent]]
-                 [code :only [slamhound-text proxy-dialog]]
-                 [state :only [defstate load-state]])
-          [clojure.java.io :only [file]])
+  (:use clj-arrow.arrow
+        (llama [document :only [text-model text-delegate]]
+               [config :only [show-options-dialog]]
+               [util :only [drop-nth change-i find-i log 
+                            new-file-dialog tab-listener
+                            add-tab remove-current-tab
+                            current-tab selected-index
+                            update-current-tab set-focus]]
+               [syntax :only [indent]]
+               [code :only [slamhound-text proxy-dialog]]
+               [state :only [defstate load-state]])
+        [clojure.java.io :only [file]])
     (:require (llama [state :as state])
               (seesaw [core :as ssw]
                       [chooser :as ssw-chooser]))
-  (:import llama.util.tab-model
-           java.awt.event.KeyEvent
-           (javax.swing.text DefaultEditorKit$CutAction
-                             DefaultEditorKit$CopyAction
-                             DefaultEditorKit$PasteAction)))
+  (:import llama.util.tab-model))
 
 (defn set-save-indicator-changed [tmodel]
   (let [tab (current-tab tmodel)]
@@ -153,47 +149,27 @@
         tmodel (tab-model. tp tabs-atom)
         current-text-area (fn []
                             (.getTextArea (.getSelectedComponent tp)))
-        m (ssw/menubar 
-            :items 
-            [(ssw/menu 
-               :text "file" :items
-               [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "menu N"
-                            :handler (fn [_] (new-file tmodel)))
-                (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "menu O"
-                            :handler (fn [_] (open-and-choose-file tmodel)))
-                :separator
-                (ssw/action :name "Save" :mnemonic \S :key "menu S"
-                            :handler (fn [_] (save tmodel)))
-                (ssw/action :name "Save As" :mnemonic \A :key "menu shift S"
-                            :handler (fn [_] (save-as tmodel)))
-                :separator
-                (ssw/action :name "Close" :tip "Close the current tab" :mnemonic \C :key "menu W"
-                            :handler (fn [_] (remove-current-tab tmodel)))])
-             (ssw/menu
-               :text "edit" :items
-               [(ssw/menu-item :action (DefaultEditorKit$CutAction.) :text "Cut" :key "menu X")
-                (ssw/menu-item :action (DefaultEditorKit$CopyAction.) :text "Copy" :key "menu C")
-                (ssw/menu-item :action (DefaultEditorKit$PasteAction.) :text "Paste" :key "menu V")
-                :separator
-                (ssw/action :name "Undo" :key "menu Z" :handler (fn [_] (undo tmodel)))
-                (ssw/action :name "Redo" :key "menu R" :handler (fn [_] (redo tmodel)))
-                :separator
-                (ssw/action :name "Indent" :key "menu I" 
-                            :handler (fn [_] (indent-selection (current-text-area))))
-                (let [a (ssw/action :name "Indent right" ;:key "menu shift right"
-                                    :handler (fn [_] (change-indent (current-text-area) :right)))]
-                  (.putValue a javax.swing.Action/ACCELERATOR_KEY
-                             (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_RIGHT KeyEvent/ALT_DOWN_MASK))
-                  a)
-                (let [a (ssw/action :name "Indent left"  
-                                    :handler (fn [_] (change-indent (current-text-area) :left)))]
-                  (.putValue a javax.swing.Action/ACCELERATOR_KEY
-                             (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_LEFT KeyEvent/ALT_DOWN_MASK))
-                  a)
-                (ssw/action :name "Preferences"
-                            :handler (fn [_] (show-options-dialog)))
-                ])])]
-    (let [listener (tab-listener tmodel text-delegate)]
+        action-fn
+        (fn [id]
+          (case id
+            :new            (new-file tmodel)
+            :open           (open-and-choose-file tmodel)
+            :save           (save tmodel)
+            :save-as        (save-as tmodel)
+            :remove-current (remove-current-tab tmodel)
+            :undo           (undo tmodel)
+            :redo           (redo tmodel)
+            :indent         (indent-selection (current-text-area))
+            :indent-right   (change-indent (current-text-area :right))
+            :indent-left    (change-indent (current-text-area :left)))
+          (log :error (str "action not supported by editor: " id)))]
+    (let [listener (tab-listener tmodel 
+                     (fn [raw-tab]
+                       (let [tab (text-delegate raw-tab)]
+                         (ssw/listen (:text-pane tab) :focus-gained
+                           (fn [_] (set-focus :editor action-fn)))
+                         tab)))]
       (add-watch tabs-atom (gensym) listener)
       (listener nil nil [] @tabs-atom))
-    {:content tp :menu m}))
+    {:content tp}
+    ))
