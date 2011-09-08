@@ -214,3 +214,13 @@
           (when-let [{:keys [path title]} (nth raw-items i nil)]
             (.setTitleAt tp i title)
             (.setToolTipTextAt tp i path)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; focus system
+
+(let [focus (atom {})]
+  (defn set-focus [k f]
+    (swap! focus assoc k f))
+
+  (defn send-to-focus [k v]
+    ((get @focus k) v)))
