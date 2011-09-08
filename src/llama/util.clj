@@ -222,6 +222,7 @@
   (defn set-focus [k f]
     (swap! focus assoc k f))
 
-  (defn send-to-focus [k v]
+  (defn send-to-focus [k & vs]
     (if-let [f (get @focus k)]
-      (f v))))
+      (apply f vs))))
+
