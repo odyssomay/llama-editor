@@ -3,6 +3,7 @@
                [ui :only [init-ui]]
                [editor :only [editor-view]]
                [repl :only [repl-view]]
+               [project :only [project-view]]
                [util :only [send-to-focus]]))
   (:require dynamik
             [llama.state :as state]
@@ -16,17 +17,24 @@
   (dynamik/dynamik-panel
     :create-content (fn [type]
                       (case type
-                        "editor" (editor-view)
-                        "repl" (repl-view)))
+                        "editor"  (editor-view)
+                        "repl"    (repl-view)
+                        "project" (project-view)
+                        ))
     :default-type "editor"
     :menu? false
-    :types ["editor" "repl" "project pane"]))
+    :types ["editor" "repl" "project"]))
 
 (defn file-menu []
   [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "menu N"
                :handler (fn [_] (send-to-focus :editor :new)))
    (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "menu O"
                :handler (fn [_] (send-to-focus :editor :open)))
+   :separator
+   (ssw/action :name "New project"
+               :handler (fn [_] (send-to-focus :project :new)))
+   (ssw/action :name "Open project" :mnemonic \p
+               :handler (fn [_] (send-to-focus :project :open)))
    :separator
    (ssw/action :name "Save" :mnemonic \S :key "menu S"
                :handler (fn [_] (send-to-focus :editor :save)))

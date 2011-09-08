@@ -1,11 +1,12 @@
 (ns llama.project
   (:use clj-arrow.arrow
+        (llama [util :only [tab-listener set-focus send-to-focus]]
+               [state :only [defstate load-state]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [editor :as editor]
                    [error :as error]
                    [repl :as repl]
-                   [state :as state]
                    [util :as util])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
@@ -14,24 +15,8 @@
                     [chooser :as ssw-chooser])
             (leiningen [core :as lein-core]
                        [run :as lein-run]
-                       [deps :as lein-deps])))
-
-;; data structure
-
-;(def project-pane 
-;  (let [p (ssw-mig/mig-panel)]
-;    (.setBackground p (ssw-color/color 255 255 255))
-;    p))
-
-(def current-projects (atom []))
-;(add-watch current-projects nil (fn [_ _ _ items]
-;                                  (ssw/config! project-pane :items (map #(vec [(::project-tree %) "span"]) items))))
-
-(defn close-project [project]
-  (swap! current-projects
-         (fn [items]
-           (remove #(= (:target-dir %)
-                       (:target-dir project)) items))))
+                       [deps :as lein-deps]))
+  (:import llama.util.tab-model))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; running
@@ -88,7 +73,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; menu
 
-(defn create-project-menu [project]
+(defn project-menu [project]
   [:separator
    (ssw/action :name "run"
                :handler (fn [_] (run-project project)))
@@ -99,7 +84,8 @@
    (ssw/action :name "repl"
                :handler (fn [_] (repl/create-new-repl project)))
    (ssw/action :name "close"
-               :handler (fn [_] (close-project project)))])
+               :handler (fn [_] ;(close-project project)
+                          ))])
 
 (defn specialized-menu [tree project update-tree]
   (fn [e]
@@ -107,24 +93,27 @@
       (let [path (->> raw_path
                    .getPath
                    (map #(.getName (:file %))))
-            selected_file (apply file (cons (:target-dir project) (rest path)))]
-        [(ssw/action :name "new file" :enabled? (.isDirectory selected_file)
+            selected-file (apply file (cons (:target-dir project) (rest path)))]
+        [(ssw/action :name "new file" :enabled? (.isDirectory selected-file)
                      :handler (fn [_]
                                 (when-let [name (ssw/input "filename")]
-                                  (.createNewFile (file selected_file name))
+                                  (.createNewFile (file selected-file name))
                                   (update-tree))))
-         (ssw/action :name "open file" :enabled? (not (.isDirectory selected_file))
+         (ssw/action :name "open file" :enabled? (not (.isDirectory selected-file))
                      :handler (fn [_]
-                                (editor/open-file {:path (.getCanonicalPath selected_file)
-                                                   :title (last path)})))
+                                (send-to-focus :editor :open
+                                   selected-file
+;                                  {:path (.getCanonicalPath selected_file)
+;                                   :title (last path)}
+                                               )))
          (ssw/menu :text "advanced"
                    :items 
                    [(ssw/action :name "run command"
                                 :handler (fn [_] (run-project-command project)))
                     :separator
-                    (ssw/action :name "remove file" :enabled? (not (.isDirectory selected_file))
+                    (ssw/action :name "remove file" :enabled? (not (.isDirectory selected-file))
                                 :handler (fn [_]
-                                            (.delete selected_file)
+                                            (.delete selected-file)
                                             (update-tree)))])]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,7 +123,7 @@
   Object
   (toString [_] (.getName file)))
 
-(defn create-file-tree-model [path]
+(defn file-tree-model [path]
   (ssw-tree/simple-tree-model 
     (fn [node] (.isDirectory (:file node)))
     (fn [parent] 
@@ -151,7 +140,7 @@
 (defn set-icon [c icon]
   (.setIcon c (ssw/icon (ClassLoader/getSystemResource (str "icons/" icon)))))
 
-(defn create-project-tree-renderer []
+(defn project-tree-renderer []
   (proxy [javax.swing.tree.DefaultTreeCellRenderer] []
     (getTreeCellRendererComponent [tree value sel expanded leaf row has_focus]
                                   (let [c (proxy-super getTreeCellRendererComponent tree value sel expanded leaf row has_focus)]
@@ -166,25 +155,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; project tree
 
-(defn create-new-project-tree [project]
+(defn project-tree [project]
   (let [model (::model project)
-        tc (javax.swing.JTree. (if model model (create-file-tree-model (:target-dir project))))
-        project (assoc project ::project-tree tc)
-        project-menu (create-project-menu project)
+        tc (javax.swing.JTree. (if model model (file-tree-model (:target-dir project))))
+        project (assoc project ::project-tree tc :content tc)
+        projectm (project-menu project)
         update-tree (fn [& _] (.updateUI tc))
         menu-f (specialized-menu tc project update-tree)]
-    (ssw/config! tc :popup (fn [e] (concat (menu-f e) project-menu)))
-    (.setCellRenderer tc (create-project-tree-renderer))
+    (ssw/config! tc :popup (fn [e] (concat (menu-f e) projectm)))
+    (.setCellRenderer tc (project-tree-renderer))
     project))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; state
+
+(def projects (atom []))
+(defstate :projects (fn [] (map :target-dir @projects)))
+(load-state :projects
+  #(doseq [path %]
+     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
+
 (defn load-project [project]
   (swap! projects conj
-         (merge project 
-                {::model (create-file-tree-model (:target-dir project))
-                 ::project-thread (atom nil)})))
-;         (-> (create-new-project-tree project) 
-;             (assoc ::project-thread (atom nil)))))
+         (merge {:title (.getName (file (:target-dir project)))
+                 :tip (:target-dir project)
+                 :model (file-tree-model (:target-dir project))
+                 :project-thread (atom nil)}
+                project)))
 
 (defn create-new-project [f]
   (llama-new/new-project (.getName f) (.getPath f)))
@@ -199,15 +196,21 @@
     (-> (lein-core/read-project (.getCanonicalPath f))
         load-project)))
 
-(state/defstate :projects (fn [] (map :target-dir @current-projects)))
-(state/load-state :projects
-  #(doseq [project %]
-     (load-project (lein-core/read-project (.getCanonicalPath (file project "project.clj"))))))
-
-;(def projects (atom []))
-
-;(defn project-view []
-;  (let [
-;  )
+(defn project-view []
+  (let [tp (ssw/tabbed-panel :overflow :scroll)
+        tmodel (tab-model. tp projects)
+        action-fn
+        (fn [id]
+          (case id
+            :new (create-and-load-new-project)
+            :open (load-project-from-file)))]
+    (let [listener (tab-listener tmodel 
+                     (fn [raw-tab]
+                       (let [tab (project-tree raw-tab)]
+                         tab)))]
+      (add-watch projects (gensym) listener)
+      (listener nil nil [] @projects))
+    (set-focus :project action-fn)
+    {:content tp}))
 
 
