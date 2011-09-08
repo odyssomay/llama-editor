@@ -4,6 +4,7 @@
   (:import javax.swing.UIManager))
 
 (defn init-l&f []
+  (System/setProperty "apple.laf.useScreenMenuBar" "true")
   (listen-to-option :general :native-look?
     (fn [_ native-look?]
       (if native-look?
