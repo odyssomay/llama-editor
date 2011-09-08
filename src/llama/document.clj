@@ -9,7 +9,8 @@
   (:require [seesaw.core :as ssw])
   (:import javax.swing.text.AbstractDocument$DefaultDocumentEvent
            javax.swing.event.DocumentEvent$EventType
-           java.awt.RenderingHints))
+           java.awt.RenderingHints
+           org.fife.ui.rtextarea.ConfigurableCaret))
 
 (defn get-font []
   (font (first (filter #(case %
@@ -276,6 +277,15 @@
       (fn [_ enabled?] (.setHighlightCurrentLine area enabled?)))
     (listen-to-option :editor :wrap?
       (fn [_ enabled?] (.setLineWrap area enabled?)))
+    (listen-to-option :editor :block-style
+      (fn [_ style] (.setCaretStyle area
+                      org.fife.ui.rtextarea.RTextArea/INSERT_MODE
+                      (case style
+                        "standard"      ConfigurableCaret/VERTICAL_LINE_STYLE
+                        "thick"         ConfigurableCaret/THICK_VERTICAL_LINE_STYLE
+                        "underline"     ConfigurableCaret/UNDERLINE_STYLE
+                        "block"         ConfigurableCaret/BLOCK_STYLE
+                        "block outline" ConfigurableCaret/BLOCK_BORDER_STYLE))))
     (ssw/listen area :mouse-moved 
                 (fn [_] (if (and (.isEditable area)
                                  (get-option :general :mouse-focus))

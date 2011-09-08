@@ -193,7 +193,10 @@
                                        (.setSelectedItem cb selected))))
                  cb) "wrap"]
             [(checkbox "highlight current line" :editor :highlight-line?)] 
-              ["size" "split 2"] [(number-spinner 10 1 20 :editor :font-size) "wrap"]]))
+              ["size" "split 2"] [(number-spinner 10 1 20 :editor :font-size) "wrap"]
+            ["cursor style" "split 2"] [(combobox ["standard" "thick" "underline" 
+                                                   "block" "block outline"] 
+                                                  :editor :block-style)]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; options UI
