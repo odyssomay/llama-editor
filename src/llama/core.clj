@@ -36,7 +36,7 @@
    (ssw/action :name "Close" :tip "Close the current tab" :mnemonic \C :key "menu W"
                :handler (fn [_] (send-to-focus :editor :remove-current-tab)))])
 
-(defn edit-menu []
+(defn edit-menu [panel]
   [(ssw/menu-item :action (DefaultEditorKit$CutAction.) :text "Cut" :key "menu X")
    (ssw/menu-item :action (DefaultEditorKit$CopyAction.) :text "Copy" :key "menu C")
    (ssw/menu-item :action (DefaultEditorKit$PasteAction.) :text "Paste" :key "menu V")
@@ -57,19 +57,22 @@
                 (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_LEFT KeyEvent/ALT_DOWN_MASK))
      a)
    :separator
+   (ssw/checkbox-menu-item :action 
+     (ssw/action :name "layout" :key "menu E"
+       :handler (fn [e] (.setEditable panel (.isSelected (.getSource e))))))
    (ssw/action :name "Preferences"
                :handler (fn [_] (show-options-dialog)))])
 
-(defn menubar []
+(defn menubar [panel]
   (let [fm (ssw/menu :text "File" :items (file-menu))
-        em (ssw/menu :text "Edit" :items (edit-menu))]
+        em (ssw/menu :text "Edit" :items (edit-menu panel))]
     (ssw/menubar :items [fm em])))
 
 (defn llama-editor []
   (init-options)
   (init-ui)
   (let [c (main-area)
-        f (ssw/frame :content c :title "llama-editor" :size [800 :by 500] :menubar (menubar))]
+        f (ssw/frame :content c :title "llama-editor" :size [800 :by 500] :menubar (menubar c))]
     (state/defstate :main-layout #(.getTileLayout c))
     (state/load-state :main-layout #(.setTileLayout c %))
     (state/defstate :frame
