@@ -1,5 +1,6 @@
 (ns llama.repl
   (:use (llama [document :only [text-delegate text-model]]
+               [config :only [get-option]]
                [syntax :only [parens-count]]
                [util :only [start-process drop-nth log write-stream-to-text set-focus tab-listener]]
                [state :only [defstate load-state save-defined-state]])
@@ -112,7 +113,11 @@
     (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
     (.add input_panel input_field java.awt.BorderLayout/SOUTH)
     (init-repl-text-fields repl output_pane error_pane)
-    (ssw/listen output_pane :mouse-moved (fn [_] (.requestFocusInWindow input_field)))))
+    (ssw/listen output_pane :mouse-moved 
+      (fn [_]
+        (if (get-option :general :mouse-focus)
+          (.requestFocusInWindow input_field))))
+    ))
 
 (declare close-project-repl)
 
