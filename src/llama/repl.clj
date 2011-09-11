@@ -1,7 +1,7 @@
 (ns llama.repl
-  (:use (llama [document :only [text-delegate]]
+  (:use (llama [document :only [text-delegate text-model]]
                [syntax :only [parens-count]]
-               [util :only [start-process drop-nth log write-stream-to-text]]
+               [util :only [start-process drop-nth log write-stream-to-text set-focus tab-listener]]
                [state :only [defstate load-state save-defined-state]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
@@ -10,7 +10,7 @@
             llama.leiningen.repl
             (leiningen [core :as lein-core] 
                        [classpath :as lein-classpath]))
-  (:import 
+  (:import llama.util.tab-model 
     (javax.swing JTextArea)
     (java.awt.event KeyEvent KeyListener)))
 
@@ -116,10 +116,12 @@
 
 (declare close-current-repl)
 
-(defn init-new-repl [project]
-  (let [repl (atom (start-repl project)) ;(llama.leiningen.repl/init-repl-server project 6000)
-        jtext_pane (:text-pane (text-delegate {:type "clj"}))
-        err_text (javax.swing.JTextArea.) 
+(defn init-repl [obj]
+  (let [project (:project obj)
+        repl (if (:repl obj) (:repl obj)
+               (atom (start-repl project))) ;(llama.leiningen.repl/init-repl-server project 6000)
+        jtext_pane (:text-pane (text-delegate {:type "clj" :model (:model obj)}))
+        err_text (javax.swing.JTextArea.)
         input_panel (ssw/border-panel) 
         repl_panel (javax.swing.JPanel. (java.awt.CardLayout.))
         button_panel 
@@ -153,26 +155,30 @@
      :path (:target-dir project)
      :title (:name project)}))
 
-(defn add-repls-listener [tp repls-atom]
-  (add-watch repls-atom nil (fn [_ _ _ items] 
-                              (.removeAll tp)
-                              (ssw/config! tp :tabs items))))
+(def repls (atom []))
 
-(defn create-new-repl [tp repls-atom project]
-  (let [tab (init-new-repl project)]
-    (swap! repls-atom conj tab)
-    (.setSelectedComponent tp (:content tab))))
+(defn open-repl [tmodel project]
+  (let [tab {:project project
+             :model (text-model {:type "clj"})
+             :repl (atom (start-repl project))}]
+    (swap! repls conj tab)))
 
 (defn repl-view []
-  (let [repls-atom (atom [])
-        tp (ssw/tabbed-panel :placement :right)
-        m (ssw/menubar
-            :items
-            [(ssw/menu :text "new"
-               :items [(ssw/action :name "experiment"
-                                   :handler (fn [_] (create-new-repl tp repls-atom {:name "exp" ::anonymous true})))])])]
-    (add-repls-listener tp repls-atom)
-    {:content tp :menu m}))
+  (let [tp (ssw/tabbed-panel :placement :right)
+        tmodel (tab-model. tp repls)
+        action-fn
+        (fn [& [id v]]
+          (case id
+            :experiment (open-repl tmodel {:name "exp" ::anonymous true})
+            :open (open-repl tmodel v)))]
+    (let [listener (tab-listener tmodel 
+                     (fn [raw-tab]
+                       (let [tab (init-repl raw-tab)]
+                         tab)))]
+      (add-watch repls (gensym) listener)
+      (listener nil nil [] @repls))
+    (set-focus :repl action-fn)
+    {:content tp}))
 
 ;(let [tabbed_pane (ssw/tabbed-panel :placement :right)
 ;      current_repls (atom [])]
