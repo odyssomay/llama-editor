@@ -82,7 +82,7 @@
    (ssw/action :name "deps"
                :handler (fn [_] (lein-deps/deps project)))
    (ssw/action :name "repl"
-               :handler (fn [_] (repl/create-new-repl project)))
+               :handler (fn [_] (send-to-focus :repl :open project)))
    (ssw/action :name "close"
                :handler (fn [_] ;(close-project project)
                           ))])
@@ -170,10 +170,6 @@
 ;; state
 
 (def projects (atom []))
-(defstate :projects (fn [] (map :target-dir @projects)))
-(load-state :projects
-  #(doseq [path %]
-     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
 
 (defn load-project [project]
   (swap! projects conj
@@ -213,4 +209,7 @@
     (set-focus :project action-fn)
     {:content tp}))
 
-
+(defstate :projects (fn [] (map :target-dir @projects)))
+(load-state :projects
+  #(doseq [path %]
+     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
