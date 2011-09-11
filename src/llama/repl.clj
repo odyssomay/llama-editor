@@ -114,7 +114,7 @@
     (init-repl-text-fields repl output_pane error_pane)
     (ssw/listen output_pane :mouse-moved (fn [_] (.requestFocusInWindow input_field)))))
 
-(declare close-current-repl)
+(declare close-project-repl)
 
 (defn init-repl [obj]
   (let [project (:project obj)
@@ -142,7 +142,7 @@
                                   (.revalidate input_panel)))
            (ssw/action :icon (get-icon-url "gnome_process_stop.png")
                        :tip "Destroy the repl process and close the repl tab."
-                       :handler (fn [_] (stop-repl @repl) (close-current-repl nil)))])
+                       :handler (fn [_] (stop-repl @repl) (close-project-repl project)))])
         panel (ssw/border-panel :center repl_panel
                                 :west button_panel)]
     (init-repl-panels @repl jtext_pane err_text input_panel)
@@ -162,6 +162,9 @@
              :model (text-model {:type "clj"})
              :repl (atom (start-repl project))}]
     (swap! repls conj tab)))
+
+(defn close-project-repl [project]
+  (swap! repls (fn [coll] (remove #(= project (:project %)) coll))))
 
 (defn repl-view []
   (let [tp (ssw/tabbed-panel :placement :right)
@@ -199,7 +202,6 @@
 ;  (defn create-new-anonymous-repl [& _]
 ;    (create-new-repl {:name "anonymous" ::anonymous true}))
 
-  (defn close-current-repl [& _])
 ;    (swap! current_repls drop-nth (.getSelectedIndex tabbed_pane)))
 
 ;  (def repl-pane tabbed_pane)
