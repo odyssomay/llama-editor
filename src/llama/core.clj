@@ -65,6 +65,9 @@
                 (javax.swing.KeyStroke/getKeyStroke KeyEvent/VK_LEFT KeyEvent/ALT_DOWN_MASK))
      a)
    :separator
+   (ssw/action :name "Find/replace" :key "menu S"
+     :handler (fn [_] (send-to-focus :editor :find-replace)))
+   :separator
    (ssw/checkbox-menu-item :action 
      (ssw/action :name "layout" :key "menu E"
        :handler (fn [e] (.setEditable panel (.isSelected (.getSource e))))))

@@ -6,14 +6,16 @@
                             new-file-dialog tab-listener
                             add-tab remove-current-tab
                             current-tab selected-index
-                            update-current-tab set-focus]]
+                            update-current-tab set-focus
+                            send-to-focus]]
                [syntax :only [indent]]
                [code :only [slamhound-text proxy-dialog]]
                [state :only [defstate load-state]])
         [clojure.java.io :only [file]])
-    (:require (llama [state :as state])
-              (seesaw [core :as ssw]
-                      [chooser :as ssw-chooser]))
+  (:require (llama [state :as state])
+            (seesaw [core :as ssw]
+                    [chooser :as ssw-chooser]
+                    [mig :as ssw-mig]))
   (:import llama.util.tab-model))
 
 (defn set-save-indicator-changed [tmodel]
@@ -133,6 +135,47 @@
         :right (change-indent-right area line)
         :left (change-indent-left area line))))) 
 
+(def find-replace-frame
+  (memoize
+    (fn []
+      (let [find-text (ssw/text :columns 20 :border 10)
+            replace-text (ssw/text :columns 20 :border 10)
+            match-case (ssw/checkbox :text "case sensitive")
+            whole-word (ssw/checkbox :text "separate word")
+            panel
+            (ssw-mig/mig-panel :items
+              [["find" "wrap"] [find-text "span"]
+               ["replace" "wrap"] [replace-text "span"]
+               [match-case] [whole-word "wrap"]
+               [(ssw/action :name "find"
+                  :handler (fn [_] 
+                             (if-not (empty? (.getText find-text))
+                               (send-to-focus :editor :find-replace 
+                                              (.getText find-text)
+                                              (.isSelected match-case) 
+                                              (.isSelected whole-word)
+                                              true))))]
+               [(ssw/action :name "replace"
+                  :handler (fn [_]
+                             (if-not (empty? (.getText find-text))
+                               (send-to-focus :editor :find-replace 
+                                              (.getText find-text) (.getText replace-text)
+                                              (.isSelected match-case) (.isSelected whole-word)
+                                              true))))]])
+            f (ssw/frame :title "Find/Replace" :content panel)]
+        f))))
+
+(defn find-replace 
+  ([] (-> (find-replace-frame) ssw/pack! ssw/show!))
+  ([area find-text case? separate? regex?]
+   (ssw/listen (find-replace-frame) :window-closing
+     (fn [_] (.clearMarkAllHighlights area)))
+   (.markAll area find-text case? separate? regex?))
+  ([area find-text replace-text case? separate? regex?]
+   (org.fife.ui.rtextarea.SearchEngine/replaceAll
+     area find-text replace-text
+     case? separate? regex?)))
+
 ;; states
 
 (def current-tabs (atom []))
@@ -152,12 +195,13 @@
         tmodel (tab-model. tp tabs-atom)
         current-text-area (fn []
                             (.getTextArea (.getSelectedComponent tp)))
+        marked (atom [])
         action-fn
-        (fn [& [id v]]
+        (fn [id & vs]
           (case id
             :new            (new-file tmodel)
-            :open           (if v 
-                              (open-file tmodel v)
+            :open           (if vs
+                              (open-file tmodel (first vs))
                               (open-and-choose-file tmodel))
             :save           (save tmodel)
             :save-as        (save-as tmodel)
@@ -166,8 +210,11 @@
             :undo           (undo tmodel)
             :redo           (redo tmodel)
             :indent         (indent-selection (current-text-area))
-            :indent-right   (change-indent (current-text-area :right))
-            :indent-left    (change-indent (current-text-area :left))
+            :indent-right   (change-indent (current-text-area) :right)
+            :indent-left    (change-indent (current-text-area) :left)
+            :find-replace   (if vs 
+                              (apply find-replace (current-text-area) vs)
+                              (find-replace))
             (log :error (str "action not supported by editor: " id))))]
     (let [listener (tab-listener tmodel 
                      (fn [raw-tab]
