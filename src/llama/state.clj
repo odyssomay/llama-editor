@@ -1,10 +1,11 @@
 (ns llama.state
   (:use [clojure.java.io :only [file]]
-        [llama [util :only [log]]])
+        [llama [util :only [log]]
+         [statics :only [llama-dir]]])
   (:import (java.io BufferedInputStream BufferedOutputStream
                     FileInputStream FileOutputStream)))
 
-(def state-file (file "state"))
+(def state-file (file llama-dir "state"))
 (def beans-file (file state-file "beans"))
 
 (doseq [f [state-file beans-file]]
