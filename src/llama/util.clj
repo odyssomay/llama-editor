@@ -147,14 +147,6 @@
     (if (-> dialog ssw/pack! ssw/show!)
       (file (.getText dir) (.getText filename)))))
 
-(defn run-leiningen [project & args]
-  (let [p (start-process
-            (str 
-              "java -cp " (System/getProperty "java.class.path")
-              " clojure.main -") (:target-dir project))]
-    (.write (:output-stream p) (str "(use 'leiningen.core)(-main \"" (join " " args) "\")\""))
-    p))
-
 (defn write-stream-to-text [stream text-area]
   (let [jdoc (.getDocument text-area)
         text (atom "")]
