@@ -224,5 +224,6 @@
                          tab)))]
       (add-watch tabs-atom (gensym) listener)
       (listener nil nil [] @tabs-atom))
+    (set-focus :editor action-fn)
     {:content tp}
     ))
