@@ -43,13 +43,15 @@
 (defn init-options []
   (let [saved (load-state :options)]
     (reset! options
-      (if saved saved
+;      (if saved saved
         {:general
          {:native-look? false
           :mouse-focus false}
          :color
          {:background [26 26 26]
-          :text [0 0 0]}
+          :text [0 0 0]
+          :reserved-word [50 50 50]
+          }
          :editor 
          {:wrap? false
           :numbering? true
@@ -62,7 +64,9 @@
                                   "Courier new" true
                                   "Monospaced" true
                                   nil) *available-fonts*))
-          :font-size 11}}))))
+          :font-size 11
+          :cursor-style "standard"
+          }})));)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; utils
@@ -113,7 +117,7 @@
     (doseq [c @components]
       (javax.swing.SwingUtilities/updateComponentTreeUI c))))
 
-(defn color-preview-component [id & keys]
+(defn color-preview-component [id]
   (let [arc-width 5
         arc-height 5
         width 70
@@ -126,31 +130,19 @@
             (let [gc (.create g)
                   b (.getClipBounds g)]
               (ssw-graphics/anti-alias gc)
-              ;(.setColor gc (java.awt.Color/black))
               (.setColor gc (.getColor cc))
-              (.fillRoundRect gc 0 0 width height arc-width arc-height)
-              ;(.fillRoundRect gc (.x b) (.y b) (.width b) (.height b) arc-width arc-height)
-              ;(.setColor gc (.getColor cc))
-              ;(.fillRoundRect gc inset inset (- width inset) (- height inset) arc-width arc-height)
-              ;(.fillRoundRect gc (+ (.x b) inset) (+ (.y b) inset) (- (.width b) inset) (- (.height b) inset) arc-width arc-height)
-              ;(.drawRoundRect gc 0 0 (.width b) (.height b) arc-width arc-height)
-              ))
+              (.fillRoundRect gc 0 0 width height arc-width arc-height)))
           (getPreferredSize []
             (java.awt.Dimension. width height))
           (getMinimumSize [] (.getPreferredSize this))
-          (getMaximumSize [] (.getPreferredSize this))
-          )
+          (getMaximumSize [] (.getPreferredSize this)))
         frame (ssw/frame :content cc)]
     (.addChangeListener (.getSelectionModel cc)
       (reify javax.swing.event.ChangeListener
         (stateChanged [_ _]
           (let [color (.getColor cc)]
             (set-option :color id [(.getRed color) (.getGreen color) (.getBlue color)])
-            ;(doseq [k keys]
-            ;  (javax.swing.UIManager/put k color))
-            (.repaint component)
-            ;(.repaint cc)
-            ))))
+            (.repaint component)))))
     (if-let [[r g b] (get-option :color id)]
       (.setColor cc (java.awt.Color. r g b)))
     (ssw/listen component :mouse-clicked
@@ -160,15 +152,42 @@
 
 (defn generate-color-options [& options]
   (apply concat
-    (for [[id & keys] options]
-      [[(name id)] [(javax.swing.Box/createHorizontalGlue) "pushx"]
-       [(apply color-preview-component id keys) "grow 0, wrap"]])))
+    (for [[name id] options]
+      [[name] [(javax.swing.Box/createHorizontalGlue) "pushx"]
+       [(color-preview-component id) "grow 0, wrap"]])))
 
 (defn color-options []
   (ssw-mig/mig-panel :constraints ["fillx" "" ""]
-    :items (generate-color-options 
-             [:background "control"]
-             [:text "text"])))
+    :items 
+    (concat [["ui" "span"]]
+;            (generate-color-options 
+;              ["background" "control"]
+;              ["text" "text"])
+            [["editor" "span"]]
+            (generate-color-options
+              ["Comment documentation" :comment-documentation]
+              ["Comment EOL" :comment-EOL]
+              ["Comment multiline" :comment-multiline]
+              ["Data type" :data-type]
+              ["Error char" :error-char]
+              ["Error identifier" :error-id]
+              ["Error number format" :error-num-format]
+              ["Error string double" :error-string-double]
+              ["Function" :function]
+              ["Identifier" :identifier]
+              ["Literal backquote" :literal-backquote]
+              ["Literal boolean" :literal-boolean]
+              ["Literal char" :literal-char]
+              ["Literal number decimal int" :literal-number-decimal-int]
+              ["Literal number float" :literal-number-float]
+              ["Literal number hexadecimal" :literal-number-hexadecimal]
+              ["Literal string double quote" :literal-string-double-quote]
+;              ["Null" :null]
+              ["Operator" :operator]
+              ["Preprocessor" :preprocessor]
+              ["Reserved word" :reserved-word]
+              ["Separator" :separator]
+              ["Variable" :variable]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; editor
@@ -196,7 +215,7 @@
               ["size" "split 2"] [(number-spinner 10 1 20 :editor :font-size) "wrap"]
             ["cursor style" "split 2"] [(combobox ["standard" "thick" "underline" 
                                                    "block" "block outline"] 
-                                                  :editor :block-style)]]))
+                                                  :editor :cursor-style)]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; options UI

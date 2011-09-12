@@ -2,7 +2,8 @@
   (:use (llama 
           [config :only [listen-to-option get-option]]
           [syntax :only [indent parens-count find-unmatched-rparens]] 
-          [util :only [*available-fonts* color font log]])
+          [util :only [*available-fonts* color font log]]
+          [ui :only [get-syntax-scheme]])
         [clojure.string :only [split split-lines join]]
         [seesaw.invoke :only [invoke-later invoke-now]]
         [seesaw.graphics :only [anti-alias style draw polygon circle rect]])
@@ -250,6 +251,7 @@
                  (proxy-super paintComponent g)))
         content (org.fife.ui.rtextarea.RTextScrollPane. area true)
         manager (init-undoable-edits (.getDocument area))]
+    (.setSyntaxScheme area (get-syntax-scheme))
     (when (= type "clj")
       (.setAutoIndentEnabled area false)
       (let [ac (org.fife.ui.autocomplete.AutoCompletion. clojure-provider)]
@@ -277,7 +279,7 @@
       (fn [_ enabled?] (.setHighlightCurrentLine area enabled?)))
     (listen-to-option :editor :wrap?
       (fn [_ enabled?] (.setLineWrap area enabled?)))
-    (listen-to-option :editor :block-style
+    (listen-to-option :editor :cursor-style
       (fn [_ style] (.setCaretStyle area
                       org.fife.ui.rtextarea.RTextArea/INSERT_MODE
                       (case style
@@ -286,6 +288,8 @@
                         "underline"     ConfigurableCaret/UNDERLINE_STYLE
                         "block"         ConfigurableCaret/BLOCK_STYLE
                         "block outline" ConfigurableCaret/BLOCK_BORDER_STYLE))))
+    (listen-to-option :color
+      (fn [& _] (doto area .revalidate .repaint)))
     (ssw/listen area :mouse-moved 
                 (fn [_] (if (and (.isEditable area)
                                  (get-option :general :mouse-focus))
