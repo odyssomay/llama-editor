@@ -11,6 +11,16 @@
   (if-not (.exists f)
     (.mkdir f)))
 
+(defn move-existing
+  ([f i]
+   (let [new-f (file (str (.getCanonicalPath f) ".old" i))]
+     (if (.exists new-f)
+       (recur f (inc i))
+       (.renameTo f new-f))))
+  ([f]
+   (if (.exists f)
+     (move-existing f 1))))
+
 ;; states
 
 (defn load-state 
@@ -29,6 +39,7 @@
 (defn save-state [id state]
   (try 
     (let [f (file state-file (name id))]
+      (move-existing f)
       (with-open [out (java.io.FileWriter. f)]
         (binding [*out* out]
           (pr state))))
@@ -67,6 +78,7 @@
 (defn save-bean [id b]
   (try 
     (let [f (file beans-file (name id))]
+      (move-existing f)
       (with-open [enc (java.beans.XMLEncoder. (BufferedOutputStream. (FileOutputStream. f)))]
         (.writeObject enc b)))
     (catch Exception e
