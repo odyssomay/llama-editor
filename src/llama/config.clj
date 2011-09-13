@@ -40,6 +40,17 @@
          (if-not (= o n)
            (f o n)))))))
 
+(let [listeners (atom [])]
+  (defn listen-to-option-init* [f]
+    (swap! listeners conj f))
+
+  (defmacro listen-to-option-init [& body]
+    `(listen-to-option-init* (fn [] ~@body)))
+
+  (defn fire-option-init-listeners []
+    (doseq [l @listeners]
+      (l))))
+
 (defn init-options []
   (let [saved (load-state :options)]
     (reset! options
@@ -66,20 +77,23 @@
                                   nil) *available-fonts*))
           :font-size 11
           :cursor-style "standard"
-          }})));)
+          }})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; utils
 
 (defn checkbox [text class-id id]
-  (let [c (ssw/checkbox :text text :selected? (get-option class-id id))]
+  (let [c (ssw/checkbox :text text)]
+    (listen-to-option-init
+      (.setSelected c (get-option class-id id)))
     (ssw/listen c :selection
       (fn [& _] (set-option class-id id (.isSelected c))))
     c))
 
 (defn combobox [choices class-id id]
   (let [cb (ssw/combobox :model choices)]
-    (.setSelectedItem cb (get-option class-id id))
+    (listen-to-option-init
+      (.setSelectedItem cb (get-option class-id id)))
     (ssw/listen cb :selection
       (fn [& _] (set-option class-id id (.getSelectedItem cb))))
     cb))
@@ -91,7 +105,8 @@
       .getEditor
       .getTextField
       (.setColumns 7))
-    (.setValue m (get-option class-id id))
+    (listen-to-option-init
+      (.setValue m (get-option class-id id)))
     (.addChangeListener m
       (reify javax.swing.event.ChangeListener
         (stateChanged [_ _]
@@ -143,8 +158,9 @@
           (let [color (.getColor cc)]
             (set-option :color id [(.getRed color) (.getGreen color) (.getBlue color)])
             (.repaint component)))))
-    (if-let [[r g b] (get-option :color id)]
-      (.setColor cc (java.awt.Color. r g b)))
+    (listen-to-option-init
+      (if-let [[r g b] (get-option :color id)]
+        (.setColor cc (java.awt.Color. r g b))))
     (ssw/listen component :mouse-clicked
       (fn [& _] (-> frame ssw/pack! ssw/show!)))
     (listen-to-ui-update cc)
@@ -230,7 +246,10 @@
 
 (def options-dialog
   (memoize 
-    #(ssw/frame :content (options-panel) :size [700 :by 300] :title "Preferences")))
+    (fn [] 
+      (let [f (ssw/frame :content (options-panel) :size [700 :by 300] :title "Preferences")]
+        (fire-option-init-listeners)
+        f))))
 
 ;(listen-to-option :color (fn [_ _] (.updateUI (options-panel))))
 
