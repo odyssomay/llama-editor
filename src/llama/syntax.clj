@@ -2,7 +2,8 @@
     (:use [clojure.string :only (split split-lines)]
           (llama [util :only [log]])))
 
-;; p-count function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; utils
 
 (defn get-count-coll [in_str start end]
   (reductions (fn [sum next]
@@ -51,6 +52,32 @@
 (defn get-line-offset [string offset]
   (- offset (get-line-start-offset string (get-line-for-offset string offset))))
 
+(defn remove-strings [string]
+  (->> string
+    (reduce (fn [[escape? in-string? result] next]
+              [(= next \\) 
+               (cond escape? in-string?
+                     (and in-string? (= next \")) false
+                     (and (not in-string?) (= next \")) true
+                     :else in-string?)
+               (if (and in-string? (or escape? (not (= next \")))) (str result " ") (str result next))]) 
+            [false false ""])
+    last))
+
+(defn remove-characters [string]
+  (-> string
+      (.replaceAll "\\(" "  ")
+      (.replaceAll "\\)" "  ")
+      (.replaceAll "\\[" "  ")
+      (.replaceAll "\\]" "  ")
+      (.replaceAll "\\{" "  ")
+      (.replaceAll "\\}" "  "))) 
+
+; assumes remove-strings has been run, or equivalent
+(defn remove-comments [string]
+  (.replaceAll string ";.*?(\n|\\z)" "\n"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; parens
 
 (defn parens-count [in_str]
@@ -75,6 +102,7 @@
            )))
     0))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; bracket
 
 (defn bracket-count [in_str]
@@ -92,6 +120,7 @@
       (inc indent))
     0))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cbracket
 
 (defn cbracket-count [in_str]
@@ -109,15 +138,20 @@
       (inc indent))
     0))
 
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; indenting
 
 (defn get-indent [string & [dynamic-indent?]]
   (max (parens-indent string dynamic-indent?)
        (bracket-indent string)
        (cbracket-indent string)))
 
-(defn indent [in_str & [dynamic-indent?]]
-  (let [indent (get-indent (str (last (split in_str #"\n[ ]*\n"))) dynamic-indent?)]
+(defn indent [raw-string & [dynamic-indent?]]
+  (let [string (-> raw-string
+                   remove-characters
+                   remove-strings
+                   remove-comments)
+        indent (get-indent (str (last (split string #"\n[ ]*\n"))) dynamic-indent?)]
     (apply str (cons \newline
 		     (take indent (repeat \space))))))
 
