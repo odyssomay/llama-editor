@@ -141,17 +141,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; indenting
 
-(defn get-indent [string & [dynamic-indent?]]
-  (max (parens-indent string dynamic-indent?)
-       (bracket-indent string)
-       (cbracket-indent string)))
-
-(defn indent [raw-string & [dynamic-indent?]]
+(defn get-indent [raw-string & [dynamic-indent?]]
   (let [string (-> raw-string
                    remove-characters
                    remove-strings
-                   remove-comments)
-        indent (get-indent (str (last (split string #"\n[ ]*\n"))) dynamic-indent?)]
+                   remove-comments)]
+    (max (parens-indent string dynamic-indent?)
+         (bracket-indent string)
+         (cbracket-indent string))))
+
+(defn indent [string & [dynamic-indent?]]
+  (let [indent (get-indent (str (last (split string #"\n[ ]*\n"))) dynamic-indent?)]
     (apply str (cons \newline
 		     (take indent (repeat \space))))))
 
