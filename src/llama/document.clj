@@ -186,7 +186,7 @@
 
 (defmulti text-model file-type)
 
-(defmethod text-model "clj" [obj]
+(defn foldable-clj-text-model []
   (let [folded-text (atom [])
         document (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument llama.document.FoldableDocument] [nil]
                    (insertString [offset text a]
@@ -224,6 +224,22 @@
                        (.remove this start end)
                        (.insertString this start (:text (first (filter #(= (:line %) line) @folded-text))) nil)
                        (swap! folded-text (fn [state] (remove #(= (:line %) line) state))))))]
+    document))
+
+(defn clj-text-model []
+  (let [document (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument] [nil]
+                   (insertString [offset text a]
+                     (let [indented_text 
+                           (if (= text "\n")
+                             (indent (.getText this 0 offset))
+                             text)]
+                       (proxy-super insertString offset indented_text a)))
+                   (remove [offset length]
+                     (proxy-super remove offset length)))]
+    document))
+
+(defmethod text-model "clj" [obj]
+  (let [document (clj-text-model)]
     (let [text (if (:path obj) (slurp (:path obj)) "")]
       (.insertString document 0 text nil))
     document))
