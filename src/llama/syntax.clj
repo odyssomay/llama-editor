@@ -66,12 +66,12 @@
 
 (defn remove-characters [string]
   (-> string
-      (.replaceAll "\\(" "  ")
-      (.replaceAll "\\)" "  ")
-      (.replaceAll "\\[" "  ")
-      (.replaceAll "\\]" "  ")
-      (.replaceAll "\\{" "  ")
-      (.replaceAll "\\}" "  "))) 
+      (.replaceAll "\\\\\\(" "  ")
+      (.replaceAll "\\\\\\)" "  ")
+      (.replaceAll "\\\\\\[" "  ")
+      (.replaceAll "\\\\\\]" "  ")
+      (.replaceAll "\\\\\\{" "  ")
+      (.replaceAll "\\\\\\}" "  "))) 
 
 ; assumes remove-strings has been run, or equivalent
 (defn remove-comments [string]
