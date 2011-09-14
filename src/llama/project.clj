@@ -1,7 +1,8 @@
 (ns llama.project
   (:use clj-arrow.arrow
         (llama [util :only [tab-listener set-focus send-to-focus]]
-               [state :only [defstate load-state]])
+               [state :only [defstate load-state]]
+               [leiningen :only [run-leiningen]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [editor :as editor]
@@ -80,7 +81,7 @@
    (ssw/action :name "stop"
                :handler (fn [_] (stop-project project)))
    (ssw/action :name "deps"
-               :handler (fn [_] (lein-deps/deps project)))
+               :handler (fn [_] (run-leiningen project "deps")))
    (ssw/action :name "repl"
                :handler (fn [_] (send-to-focus :repl :open project)))
    (ssw/action :name "close"
@@ -160,8 +161,12 @@
         tc (javax.swing.JTree. (if model model (file-tree-model (:target-dir project))))
         project (assoc project ::project-tree tc :content tc)
         projectm (project-menu project)
-        update-tree (fn [& _] (.updateUI tc))
+        update-tree (fn [& _] (.invalidate tc))
         menu-f (specialized-menu tc project update-tree)]
+    (.schedule (java.util.Timer.)
+      (proxy [java.util.TimerTask] []
+        (run [] (update-tree)))
+      (long 1500))
     (ssw/config! tc :popup (fn [e] (concat (menu-f e) projectm)))
     (.setCellRenderer tc (project-tree-renderer))
     project))
