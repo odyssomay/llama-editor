@@ -203,9 +203,15 @@
       (if-not (= (count old-items) (count raw-items))
         (set-tabs raw-items)
         (doseq [i (range (.getTabCount tp))]
-          (when-let [{:keys [path title]} (nth raw-items i nil)]
+          (when-let [{:keys [tip title]} (nth raw-items i nil)]
             (.setTitleAt tp i title)
-            (.setToolTipTextAt tp i path)))))))
+            (.setToolTipTextAt tp i tip)))))))
+
+(defn update-tab [tab-atom pred? f]
+  (println "yep")
+  (swap! tab-atom
+    (fn [coll]
+      (change-i (first (filter pred? coll)) coll))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; focus system
