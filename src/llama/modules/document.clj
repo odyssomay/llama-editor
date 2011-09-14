@@ -3,8 +3,9 @@
   (:use (llama 
           [config :only [listen-to-option get-option]]
           [util :only [*available-fonts* color font log]]
-          [ui :only [get-syntax-scheme]])
+          )
         (llama.modules 
+          [ui :only [get-syntax-scheme]]
           [syntax :only [indent parens-count find-unmatched-rparens]])
         [clojure.string :only [split split-lines join]]
         [seesaw.invoke :only [invoke-later invoke-now]]
