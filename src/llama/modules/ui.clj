@@ -61,3 +61,5 @@
   (init-syntax-scheme)
   )
 
+(defn init-module []
+  (init-ui))
