@@ -3,7 +3,10 @@
                [util :only [send-to-focus]]
                [module-utils :only [add-menu]]
                ))
-  (:require [seesaw.core :as ssw])
+  (:require 
+    (llama.modules
+      [editor :as editor])
+    [seesaw.core :as ssw])
   (:import java.awt.event.KeyEvent
            (javax.swing.text DefaultEditorKit$CutAction
                              DefaultEditorKit$CopyAction
@@ -13,7 +16,7 @@
   [(ssw/action :name "New" :tip "Create a new file" :mnemonic \n :key "menu N"
                :handler (fn [_] (send-to-focus :editor :new)))
    (ssw/action :name "Open" :tip "Open an existing file" :mnemonic \O :key "menu O"
-               :handler (fn [_] (send-to-focus :editor :open)))
+               :handler (fn [_] (editor/open-and-choose-file editor/current-tabs)))
    :separator
    (ssw/action :name "New project"
                :handler (fn [_] (send-to-focus :project :new)))
