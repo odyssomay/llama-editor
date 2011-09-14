@@ -22,20 +22,6 @@
                  "Monospaced" true
                  nil) *available-fonts*)) 12))
 
-;; undo/redo
-
-(defn init-undoable-edits [jdoc]
-  (let [manager (javax.swing.undo.UndoManager.)
-        listener (reify javax.swing.event.UndoableEditListener
-                   (undoableEditHappened [this e]
-                                         (let [edit (.getEdit e)]
-                                           (if-not (and ;(= (class e) AbstractDocument$DefaultDocumentEvent)
-                                                        (= (.getType edit) DocumentEvent$EventType/CHANGE))
-                                             (.addEdit manager edit) 
-                                             ))))]
-    (.addUndoableEditListener jdoc listener)
-    manager))
-
 ;; autocompletion
 
 (def clojure-provider (org.fife.ui.autocomplete.DefaultCompletionProvider.))

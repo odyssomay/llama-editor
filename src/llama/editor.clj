@@ -86,16 +86,6 @@
       (save-file tmodel (:path tab))
       (save-as tmodel))))
 
-(defn undo [tmodel]
-  (let [m (:manager (current-tab tmodel))]
-    (if (.canUndo m)
-      (.undo m))))
-
-(defn redo [tmodel]
-  (let [m (:manager (current-tab tmodel))]
-    (if (.canRedo m)
-      (.redo m))))
-
 (defn line-indent [area line & [toggle?]]
   (let [document (.getDocument area)
         offset (.getLineStartOffset area line)
@@ -207,8 +197,8 @@
             :save-as        (save-as tmodel)
             :remove-current-tab 
                             (remove-current-tab tmodel)
-            :undo           (undo tmodel)
-            :redo           (redo tmodel)
+            :undo           (.undoLastAction (current-text-area))
+            :redo           (.redoLastAction (current-text-area))
             :indent         (indent-selection (current-text-area))
             :indent-right   (change-indent (current-text-area) :right)
             :indent-left    (change-indent (current-text-area) :left)
