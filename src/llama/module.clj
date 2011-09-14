@@ -1,20 +1,27 @@
-(ns llama.module)
+(ns llama.module
+  (:use (llama [util :only [log]])))
 
-(def modules (atom [
-                    'llama.modules.core-menus
-;                    'llama.modules.document
-                    'llama.modules.editor
-                    'llama.modules.project
-                    'llama.modules.repl
-                    ]))
+(def modules 
+  [{:id "menus"    :depends ["editor" "project" "repl"]}
+   {:id "document" :depends ["ui"] :passive true}
+   {:id "editor"   :depends ["document" "syntax" "code"]}
+   {:id "project"  :depends ["editor" "repl"]}
+   {:id "repl"     :depends ["syntax" "document"]}
+   {:id "syntax"   :passive true}
+   {:id "ui"}])
+
+(def active-modules 
+  (atom ["ui" "core-menus" "editor" "project" "repl"]))
 
 (defn get-modules []
-  @modules)
+  @active-modules)
 
 (defn init-modules []
   (doseq [m (get-modules)]
-    (require m)
-    (println m)
-;    (if-not (:lib (meta (find-ns m)))
-      ((ns-resolve m 'init-module))))
+    (let [module-sym (symbol (str "llama.modules." m))]
+      (require module-sym :reload)
+      (println module-sym)
+      (if-let [f (ns-resolve module-sym 'init-module)]
+        (f)
+        (log :error (str " is missing (init-module) in module: " m))))))
 
