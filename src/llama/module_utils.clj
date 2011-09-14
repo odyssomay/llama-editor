@@ -21,9 +21,9 @@
 
 (let [focus (atom {})]
   (defn set-module-focus [id f]
-    (swap! focus assoc k f))
+    (swap! focus assoc id f))
 
   (defn send-to-module [id & vs]
-    (if-let [f (get @focus k)]
+    (if-let [f (get @focus id)]
       (apply f vs))))
 
