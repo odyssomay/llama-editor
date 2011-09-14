@@ -208,19 +208,7 @@
             (.setToolTipTextAt tp i tip)))))))
 
 (defn update-tab [tab-atom pred? f]
-  (println "yep")
   (swap! tab-atom
     (fn [coll]
-      (change-i (first (filter pred? coll)) coll))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; focus system
-
-(let [focus (atom {})]
-  (defn set-focus [k f]
-    (swap! focus assoc k f))
-
-  (defn send-to-focus [k & vs]
-    (if-let [f (get @focus k)]
-      (apply f vs))))
+      (change-i (find-i true (map pred? coll)) f coll))))
 

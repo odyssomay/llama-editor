@@ -19,3 +19,11 @@
 
 (defn add-config [id c] )
 
+(let [focus (atom {})]
+  (defn set-module-focus [id f]
+    (swap! focus assoc k f))
+
+  (defn send-to-module [id & vs]
+    (if-let [f (get @focus k)]
+      (apply f vs))))
+
