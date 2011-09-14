@@ -7,6 +7,7 @@
           [syntax :only [parens-count]]
           [document :only [text-delegate text-model]])
         clj-arrow.arrow
+        [clojure.java.io :only [copy resource reader]]
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]
             [seesaw.core :as ssw]
@@ -20,20 +21,13 @@
 (defn start-repl [project]
   (let [classpath (if (::anonymous project)
                     (System/getProperty "java.class.path")
-                    ;(.getPath (ClassLoader/getSystemResource "clojure-1.2.1.jar"))
                     (lein-classpath/get-classpath-string project))
-        repl_url (ClassLoader/getSystemResource "repl.clj")
-        repl_source 
-        (apply str
-               (with-open [s (cio/reader (.openStream repl_url))]
-                 (let [f (fn this []
-                           (if (.ready s)
-                             (cons (char (.read s)) (this))
-                             '()))]
-                   (f))))
+        repl-source (with-open [w (java.io.StringWriter.)]
+                      (copy (reader (resource "repl.clj")) w)
+                      (str w))
         process (start-process (str "java -cp " classpath " clojure.main -") (:target-dir project))]
     (doto (:output-stream process)
-      (.write repl_source)
+      (.write repl-source)
       .flush)
     (merge process project)))
 
