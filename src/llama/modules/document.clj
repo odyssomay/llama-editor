@@ -1,9 +1,11 @@
-(ns llama.document
+(ns llama.modules.document
+  ^{:lib true}
   (:use (llama 
           [config :only [listen-to-option get-option]]
-          [syntax :only [indent parens-count find-unmatched-rparens]] 
           [util :only [*available-fonts* color font log]]
           [ui :only [get-syntax-scheme]])
+        (llama.modules 
+          [syntax :only [indent parens-count find-unmatched-rparens]])
         [clojure.string :only [split split-lines join]]
         [seesaw.invoke :only [invoke-later invoke-now]]
         [seesaw.graphics :only [anti-alias style draw polygon circle rect]])
@@ -174,7 +176,7 @@
 
 (defn foldable-clj-text-model []
   (let [folded-text (atom [])
-        document (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument llama.document.FoldableDocument] [nil]
+        document (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxDocument llama.modules.document.FoldableDocument] [nil]
                    (insertString [offset text a]
                      (let [indented_text 
                            (if (= text "\n")
@@ -251,8 +253,7 @@
                    (.setRenderingHint RenderingHints/KEY_RENDERING
                                       RenderingHints/VALUE_RENDER_QUALITY))
                  (proxy-super paintComponent g)))
-        content (org.fife.ui.rtextarea.RTextScrollPane. area true)
-        manager (init-undoable-edits (.getDocument area))]
+        content (org.fife.ui.rtextarea.RTextScrollPane. area true)]
     (.setSyntaxScheme area (get-syntax-scheme))
     (when (= type "clj")
       (.setAutoIndentEnabled area false)
@@ -297,5 +298,6 @@
                                  (get-option :general :mouse-focus))
                           (.requestFocusInWindow area))))
     (assoc obj :content content
-               :text-pane area
-               :manager manager)))
+               :text-pane area)))
+
+(defn init-module [] )

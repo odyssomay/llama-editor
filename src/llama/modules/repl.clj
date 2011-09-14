@@ -1,9 +1,10 @@
-(ns llama.repl
-  (:use (llama [document :only [text-delegate text-model]]
-               [config :only [get-option]]
-               [syntax :only [parens-count]]
+(ns llama.modules.repl
+  (:use (llama [config :only [get-option]]
                [util :only [start-process drop-nth log write-stream-to-text set-focus tab-listener]]
                [state :only [defstate load-state save-defined-state]])
+        (llama.modules
+          [syntax :only [parens-count]]
+          [document :only [text-delegate text-model]])
         clj-arrow.arrow
  	[clojure.string :only (split join)])
   (:require [clojure.java.io :as cio]

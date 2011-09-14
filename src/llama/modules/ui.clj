@@ -1,4 +1,4 @@
-(ns llama.ui
+(ns llama.modules.ui
   (:use (llama [config :only [get-option listen-to-option fire-ui-update]]))
   (:require [seesaw.core :as ssw])
   (:import javax.swing.UIManager

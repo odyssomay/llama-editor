@@ -1,4 +1,4 @@
-(ns llama.syntax
+(ns llama.modules.syntax
     (:use [clojure.string :only (split split-lines)]
           (llama [util :only [log]])))
 

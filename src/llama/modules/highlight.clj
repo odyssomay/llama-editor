@@ -1,4 +1,4 @@
-(ns llama.highlight
+(ns llama.modules.highlight
   (:use (llama util))
   (:import (llama.lexer ClojureLexer)
 ;	   (jsyntaxpane Token TokenType)

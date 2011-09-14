@@ -1,14 +1,15 @@
-(ns llama.project
+(ns llama.modules.project
   (:use clj-arrow.arrow
         (llama [util :only [tab-listener set-focus send-to-focus]]
                [state :only [defstate load-state]]
                [leiningen :only [run-leiningen]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
-            (llama [editor :as editor]
-                   [error :as error]
-                   [repl :as repl]
+            (llama [error :as error]
                    [util :as util])
+            (llama.modules
+              [editor :as editor]
+              [repl :as repl])
             (seesaw [core :as ssw]
                     [mig :as ssw-mig]
                     [tree :as ssw-tree]

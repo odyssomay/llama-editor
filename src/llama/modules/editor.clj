@@ -1,6 +1,11 @@
-(ns llama.editor
+(ns llama.modules.editor
   (:use clj-arrow.arrow
-        (llama [document :only [text-model text-delegate]]
+        (llama.modules
+          [document :only [text-model text-delegate]]
+          [syntax :only [indent]]
+          [code :only [slamhound-text proxy-dialog]])
+        (llama 
+               [module-utils :only [add-view]]
                [config :only [show-options-dialog]]
                [util :only [drop-nth change-i find-i log 
                             new-file-dialog tab-listener
@@ -8,8 +13,6 @@
                             current-tab selected-index
                             update-current-tab set-focus
                             send-to-focus]]
-               [syntax :only [indent]]
-               [code :only [slamhound-text proxy-dialog]]
                [state :only [defstate load-state]])
         [clojure.java.io :only [file]])
   (:require (llama [state :as state])
@@ -217,3 +220,6 @@
     (set-focus :editor action-fn)
     {:content tp}
     ))
+
+(defn init-module []
+  (add-view "editor" editor-view))

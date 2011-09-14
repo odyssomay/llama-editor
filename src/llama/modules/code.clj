@@ -1,4 +1,4 @@
-(ns llama.code
+(ns llama.modules.code
   (:use [clojure.string :only (split join)]
         [llama.util :only [log]]
         [slam.hound 
