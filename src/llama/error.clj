@@ -3,7 +3,7 @@
         (llama [util :only [log]]))
   (:require (seesaw [core :as ssw]
                     [mig :as ssw-mig])
-            (llama [document :as document]))
+            (llama.modules [document :as document]))
   (:import javax.swing.UIManager))
 
 (def ^{:private true} expanded-icon (UIManager/get "Tree.expandedIcon"))

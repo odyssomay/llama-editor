@@ -1,7 +1,8 @@
 (ns llama.modules.repl
   (:use (llama [config :only [get-option]]
                [util :only [start-process drop-nth log write-stream-to-text set-focus tab-listener]]
-               [state :only [defstate load-state save-defined-state]])
+               [state :only [defstate load-state save-defined-state]]
+               [module-utils :only [add-view]])
         (llama.modules
           [syntax :only [parens-count]]
           [document :only [text-delegate text-model]])
@@ -188,6 +189,9 @@
       (listener nil nil [] @repls))
     (set-focus :repl action-fn)
     {:content tp}))
+
+(defn init-module []
+  (add-view "repl" repl-view))
 
 ;(let [tabbed_pane (ssw/tabbed-panel :placement :right)
 ;      current_repls (atom [])]

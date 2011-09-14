@@ -1,7 +1,7 @@
 (ns llama.core
   (:use (llama [config :only [init-options listen-to-ui-update show-options-dialog]]
-               [ui :only [init-ui]]
                [module :only [init-modules]]
+               [util :only [set-focus]]
                [module-utils :only [get-menus get-views]]))
   (:require dynamik
             [llama.state :as state]
@@ -24,10 +24,10 @@
 
 (defn llama-editor []
   (init-options)
-  (init-ui)
   (init-modules)
   (let [c (main-area)
         f (ssw/frame :content c :title "llama-editor" :size [800 :by 500] :menubar (menubar c))]
+    (set-focus :panel (fn [_ e?] (.setEditable c e?)))
     (state/defstate :main-layout #(.getTileLayout c))
     (state/load-state :main-layout #(.setTileLayout c %))
     (state/defstate :frame

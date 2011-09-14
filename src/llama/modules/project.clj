@@ -2,7 +2,8 @@
   (:use clj-arrow.arrow
         (llama [util :only [tab-listener set-focus send-to-focus]]
                [state :only [defstate load-state]]
-               [leiningen :only [run-leiningen]])
+               [leiningen :only [run-leiningen]]
+               [module-utils :only [add-view]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [error :as error]
@@ -219,3 +220,6 @@
 (load-state :projects
   #(doseq [path %]
      (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
+
+(defn init-module []
+  (add-view "project" project-view))

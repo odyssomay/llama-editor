@@ -4,6 +4,8 @@
                     'llama.modules.core-menus
 ;                    'llama.modules.document
                     'llama.modules.editor
+                    'llama.modules.project
+                    'llama.modules.repl
                     ]))
 
 (defn get-modules []
