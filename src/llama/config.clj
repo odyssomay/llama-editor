@@ -168,9 +168,15 @@
 
 (defn generate-color-options [& options]
   (apply concat
-    (for [[name id] options]
-      [[name] [(javax.swing.Box/createHorizontalGlue) "pushx"]
-       [(color-preview-component id) "grow 0, wrap"]])))
+    (for [[[name1 id1] [name2 id2]] (partition 2 2 (repeat ["" nil]) options)]
+      [[name1] 
+       [(color-preview-component id1) "grow 0"]
+       [(javax.swing.Box/createHorizontalGlue) "pushx"]
+       [name2]
+       (if id2
+         [(color-preview-component id2) "grow 0, wrap"]
+         ["" "wrap"])]
+      )))
 
 (defn color-options []
   (ssw-mig/mig-panel :constraints ["fillx" "" ""]
