@@ -11,7 +11,7 @@
                             new-file-dialog tab-listener
                             add-tab remove-current-tab
                             current-tab selected-index
-                            update-current-tab update-tab]]
+                            update-current-tab]]
                [state :only [defstate load-state]])
         [clojure.java.io :only [file]])
   (:require (llama [state :as state])
@@ -200,7 +200,7 @@
                          (ssw/listen (:text-pane tab) :focus-gained
                            (fn [_] (set-module-focus :editor action-fn)))
                          tab)))
-          listener (tab-listener tmodel 
+          listener (tab-listener tmodel #(= (map :path %1) (map :path %2))  
                      (comp (fn [tab]
                              (if (:changed? tab)
                                (update-in tab [:title] str "*")

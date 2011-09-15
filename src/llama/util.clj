@@ -188,27 +188,23 @@
   (update-current-tab [this f]
     (swap! tabs
       (fn [coll]
-        (change-i (selected-index this) f coll)))))
+        (if-let [i (selected-index this)]
+          (change-i (selected-index this) f coll)
+          (log :warn "no selected index to update"))))))
 
-(defn tab-listener [tmodel f]
+(defn tab-listener [tmodel compare? f]
   (let [tp (:tp tmodel)
-        mem-text-delegate (memoize f)
         set-tabs
-        (fn [raw-items]
-          (let [items (map f raw-items)]
-            (.removeAll tp)
-            (doseq [{:keys [content title path]} items]
-              (.addTab tp title nil content path))))]
+        (fn [items]
+          (.removeAll tp)
+          (doseq [{:keys [content title path]} items]
+            (.addTab tp title nil content path)))]
     (fn [_ _ old-items raw-items]
-      (if-not (= (count old-items) (count raw-items))
-        (set-tabs raw-items)
-        (doseq [i (range (.getTabCount tp))]
-          (when-let [{:keys [tip title]} (nth raw-items i nil)]
-            (.setTitleAt tp i title)
-            (.setToolTipTextAt tp i tip)))))))
-
-(defn update-tab [tab-atom pred? f]
-  (swap! tab-atom
-    (fn [coll]
-      (change-i (find-i true (map pred? coll)) f coll))))
+      (let [items (map f raw-items)]
+        (if-not (compare? old-items raw-items)
+          (set-tabs items)
+          (doseq [i (range (.getTabCount tp))]
+            (let [{:keys [tip title]} (nth items i)]
+              (.setTitleAt tp i title)
+              (.setToolTipTextAt tp i tip))))))))
 
