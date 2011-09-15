@@ -1,9 +1,9 @@
 (ns llama.modules.project
   (:use clj-arrow.arrow
-        (llama [util :only [tab-listener set-focus send-to-focus]]
+        (llama [util :only [tab-listener]]
                [state :only [defstate load-state]]
                [leiningen :only [run-leiningen]]
-               [module-utils :only [add-view]])
+               [module-utils :only [add-view send-to-module set-module-focus]])
         [clojure.java.io :only [file]])
   (:require [llama.leiningen.new :as llama-new]
             (llama [error :as error]
@@ -85,7 +85,7 @@
    (ssw/action :name "deps"
                :handler (fn [_] (run-leiningen project "deps")))
    (ssw/action :name "repl"
-               :handler (fn [_] (send-to-focus :repl :open project)))
+               :handler (fn [_] (send-to-module :repl :open project)))
    (ssw/action :name "close"
                :handler (fn [_] ;(close-project project)
                           ))])
@@ -104,7 +104,7 @@
                                   (update-tree))))
          (ssw/action :name "open file" :enabled? (not (.isDirectory selected-file))
                      :handler (fn [_]
-                                (send-to-focus :editor :open
+                                (send-to-module :editor :open
                                    selected-file
 ;                                  {:path (.getCanonicalPath selected_file)
 ;                                   :title (last path)}
@@ -213,7 +213,7 @@
                          tab)))]
       (add-watch projects (gensym) listener)
       (listener nil nil [] @projects))
-    (set-focus :project action-fn)
+    (set-module-focus :project action-fn)
     {:content tp}))
 
 (defstate :projects (fn [] (map :target-dir @projects)))

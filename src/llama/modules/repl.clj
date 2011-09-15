@@ -1,8 +1,8 @@
 (ns llama.modules.repl
   (:use (llama [config :only [get-option]]
-               [util :only [start-process drop-nth log write-stream-to-text set-focus tab-listener]]
+               [util :only [start-process drop-nth log write-stream-to-text tab-listener]]
                [state :only [defstate load-state save-defined-state]]
-               [module-utils :only [add-view]])
+               [module-utils :only [add-view set-module-focus]])
         (llama.modules
           [syntax :only [parens-count]]
           [document :only [text-delegate text-model]])
@@ -181,7 +181,7 @@
                          tab)))]
       (add-watch repls (gensym) listener)
       (listener nil nil [] @repls))
-    (set-focus :repl action-fn)
+    (set-module-focus :repl action-fn)
     {:content tp}))
 
 (defn init-module []
