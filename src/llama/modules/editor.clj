@@ -5,14 +5,13 @@
           [syntax :only [indent]]
           [code :only [slamhound-text proxy-dialog]])
         (llama 
-               [module-utils :only [add-view]]
+               [module-utils :only [add-view send-to-module set-module-focus]]
                [config :only [show-options-dialog]]
                [util :only [drop-nth change-i find-i log 
                             new-file-dialog tab-listener
                             add-tab remove-current-tab
                             current-tab selected-index
-                            update-current-tab set-focus
-                            send-to-focus]]
+                            update-current-tab update-tab]]
                [state :only [defstate load-state]])
         [clojure.java.io :only [file]])
   (:require (llama [state :as state])
@@ -21,54 +20,52 @@
                     [mig :as ssw-mig]))
   (:import llama.util.tab-model))
 
-(defn set-save-indicator-changed [tmodel]
-  (let [tab (current-tab tmodel)]
-    (when (= (:save-indicator tab) :saved)
-      (update-current-tab tmodel #(assoc % :save-indicator :changed))
-      (update-current-tab tmodel #(assoc % :title (str (:title %) "*"))))))
+(defn set-changed-indicator [tab-atom tab changed?]
+  (let [i (find-i true (map #(= (:path %) (:path tab)) @tab-atom))
+        tab (nth @tab-atom i)]
+    (if-not (= (:changed? tab) changed?)
+      (swap! tab-atom (fn [tabs] (change-i i #(assoc % :changed? changed?) tabs))))))
 
-(defn set-save-indicator-saved [tmodel]
-  (let [tab (current-tab tmodel)]
-    (when (= (:save-indicator tab) :changed)
-      (update-current-tab tmodel #(assoc % :save-indicator :saved))
-      (update-current-tab tmodel #(assoc % :title (apply str (butlast (:title %))))))))
-
-(defn open-file [tmodel file]
+(defn open-file [tab-atom file]
   (try 
     (let [file (if (map? file) file 
                  {:title (.getName file) 
                   :path (.getCanonicalPath file)})]
-      (if-let [i (find-i (:path file) (map :path @(:tabs tmodel)))]
-        (.setSelectedIndex (:tp tmodel) i)
-        (let [tab (merge (text-delegate file) 
-                         {:save-indicator :saved
+      (if-let [i (find-i (:path file) (map :path @tab-atom))]
+        (send-to-module :editor :show i)
+        (let [tab (merge file
+                         {:changed? false
                           :model (text-model file)})]
           (.addDocumentListener 
             (:model tab)
             (reify javax.swing.event.DocumentListener
-              (changedUpdate [_ e] (set-save-indicator-changed tmodel))
-              (insertUpdate [_ e] )
-              (removeUpdate [_ e] )))
-          (add-tab tmodel tab))))
+              (changedUpdate [_ e] )
+              (insertUpdate [_ e]
+                (set-changed-indicator tab-atom tab true))
+              (removeUpdate [_ e] 
+                (set-changed-indicator tab-atom tab true))))
+          (swap! tab-atom conj tab))))
     (catch Exception e
       (log :error e (str "failed to open file")))))
 
-(defn open-and-choose-file [tmodel]
+(defn open-and-choose-file [tab-atom]
   (if-let [f (ssw-chooser/choose-file)]
-    (let [tab {:title (.getName f)
-               :path (.getCanonicalPath f)}]
-      (open-file tmodel tab))))
+    (let [file-map {:title (.getName f)
+                    :path (.getCanonicalPath f)}]
+      (open-file tab-atom file-map))))
 
 (defn new-file [tmodel] 
   (let [tab {:title "Untitled" :path nil}]
-    (open-file tmodel tab)))
+    (open-file (:tabs tmodel) tab)))
 
 (defn save-file [tmodel path]
   (try 
-    (let [d (:model (current-tab tmodel))
+    (let [tab (current-tab tmodel)
+          d (:model tab)
           text (.getText d 0 (.getLength d))]
-        (spit path text)
-        (set-save-indicator-saved tmodel))
+      (spit path text)
+      (send-to-module :editor :saved!)
+      (set-changed-indicator (:tabs tmodel) tab false))
     (catch Exception e
       (log :error e (str "failed to save file: " path)))))
 
@@ -143,18 +140,18 @@
                [(ssw/action :name "find"
                   :handler (fn [_] 
                              (if-not (empty? (.getText find-text))
-                               (send-to-focus :editor :find-replace 
-                                              (.getText find-text)
-                                              (.isSelected match-case) 
-                                              (.isSelected whole-word)
-                                              true))))]
+                               (send-to-module :editor :find-replace 
+                                               (.getText find-text)
+                                               (.isSelected match-case) 
+                                               (.isSelected whole-word)
+                                               true))))]
                [(ssw/action :name "replace"
                   :handler (fn [_]
                              (if-not (empty? (.getText find-text))
-                               (send-to-focus :editor :find-replace 
-                                              (.getText find-text) (.getText replace-text)
-                                              (.isSelected match-case) (.isSelected whole-word)
-                                              true))))]])
+                               (send-to-module :editor :find-replace 
+                                               (.getText find-text) (.getText replace-text)
+                                               (.isSelected match-case) (.isSelected whole-word)
+                                               true))))]])
             f (ssw/frame :title "Find/Replace" :content panel)]
         f))))
 
@@ -172,15 +169,6 @@
 ;; states
 
 (def current-tabs (atom []))
-(defstate :editor-tabs
-  #(map :path @current-tabs))
-(load-state :editor-tabs
-  (fn [paths]
-    (reset! current-tabs 
-            (for [path paths]
-              (let [f (file path)]
-                {:path (.getCanonicalPath f)
-                 :title (.getName f)})))))
 
 (defn editor-view []
   (let [tabs-atom current-tabs
@@ -193,9 +181,6 @@
         (fn [id & vs]
           (case id
             :new            (new-file tmodel)
-            :open           (if vs
-                              (open-file tmodel (first vs))
-                              (open-and-choose-file tmodel))
             :save           (save tmodel)
             :save-as        (save-as tmodel)
             :remove-current-tab 
@@ -209,17 +194,31 @@
                               (apply find-replace (current-text-area) vs)
                               (find-replace))
             (log :error (str "action not supported by editor: " id))))]
-    (let [listener (tab-listener tmodel 
+    (let [update-f (memoize
                      (fn [raw-tab]
                        (let [tab (text-delegate raw-tab)]
                          (ssw/listen (:text-pane tab) :focus-gained
-                           (fn [_] (set-focus :editor action-fn)))
-                         tab)))]
+                           (fn [_] (set-module-focus :editor action-fn)))
+                         tab)))
+          listener (tab-listener tmodel 
+                     (comp (fn [tab]
+                             (if (:changed? tab)
+                               (update-in tab [:title] str "*")
+                               tab)) 
+                           update-f))]
       (add-watch tabs-atom (gensym) listener)
       (listener nil nil [] @tabs-atom))
-    (set-focus :editor action-fn)
-    {:content tp}
-    ))
+    (set-module-focus :editor action-fn)
+    {:content tp}))
 
 (defn init-module []
+  (defstate :editor-tabs #(map :path @current-tabs))
+  (load-state :editor-tabs
+    (fn [paths]
+      (doseq [path paths]
+        (let [f (file path)]
+          (open-file current-tabs
+                     {:path (.getCanonicalPath f)
+                      :title (.getName f)})))))
   (add-view "editor" editor-view))
+
