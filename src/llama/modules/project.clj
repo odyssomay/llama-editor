@@ -216,10 +216,9 @@
     (set-module-focus :project action-fn)
     {:content tp}))
 
-;(defstate :projects (fn [] (map :target-dir @projects)))
-;(load-state :projects
-;  #(doseq [path %]
-;     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
-
 (defn init-module []
+  (defstate :projects (fn [] (map :target-dir @projects)))
+  (load-state :projects
+    #(doseq [path %]
+       (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
   (add-view "project" project-view))
