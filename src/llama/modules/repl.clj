@@ -175,7 +175,7 @@
           (case id
             :experiment (open-repl tmodel {:name "exp" ::anonymous true})
             :open (open-repl tmodel v)))]
-    (let [listener (tab-listener tmodel 
+    (let [listener (tab-listener tmodel (constantly false)
                      (fn [raw-tab]
                        (let [tab (init-repl raw-tab)]
                          tab)))]

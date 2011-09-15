@@ -207,7 +207,7 @@
           (case id
             :new (create-and-load-new-project)
             :open (load-project-from-file)))]
-    (let [listener (tab-listener tmodel 
+    (let [listener (tab-listener tmodel (constantly false)
                      (fn [raw-tab]
                        (let [tab (project-tree raw-tab)]
                          tab)))]
@@ -216,10 +216,10 @@
     (set-module-focus :project action-fn)
     {:content tp}))
 
-(defstate :projects (fn [] (map :target-dir @projects)))
-(load-state :projects
-  #(doseq [path %]
-     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
+;(defstate :projects (fn [] (map :target-dir @projects)))
+;(load-state :projects
+;  #(doseq [path %]
+;     (load-project (lein-core/read-project (.getCanonicalPath (file path "project.clj"))))))
 
 (defn init-module []
   (add-view "project" project-view))
