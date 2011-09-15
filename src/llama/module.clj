@@ -1,5 +1,6 @@
 (ns llama.module
-  (:use (llama [util :only [log]])))
+  (:use (llama [util :only [log]]
+               [module-utils :only [reset-views reset-menus]])))
 
 (def modules 
   [{:id "menus"    :depends ["editor" "project" "repl"]}
@@ -11,12 +12,17 @@
    {:id "ui"}])
 
 (def active-modules 
-  (atom ["ui" "core-menus" "editor" "project" "repl"]))
+  (atom ["ui" "core-menus" "editor" 
+         "project" ;"repl"
+         ]))
 
 (defn get-modules []
   @active-modules)
 
 (defn init-modules []
+  (log :info "initializing modules")
+  (reset-views)
+  (reset-menus)
   (doseq [m (get-modules)]
     (let [module-sym (symbol (str "llama.modules." m))]
       (require module-sym :reload)
