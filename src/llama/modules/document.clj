@@ -240,8 +240,7 @@
     d))
 
 (defn text-delegate [obj]
-  (let [text (if (:path obj) (slurp (:path obj)) "")
-        type (file-type obj)
+  (let [type (file-type obj)
         document (if (:model obj) 
                    (:model obj) (text-model obj))
         area (proxy [org.fife.ui.rsyntaxtextarea.RSyntaxTextArea] [document]
