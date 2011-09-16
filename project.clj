@@ -15,5 +15,5 @@
                                               javax.jms/jms
                                               com.sun.jdmk/jmxtools
                                               com.sun.jmx/jmxri]]
-                 [dynamik "8"]]
+                 [dynamik "9"]]
   :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]])
