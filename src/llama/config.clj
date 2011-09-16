@@ -61,7 +61,29 @@
          :color
          {:background [26 26 26]
           :text [0 0 0]
-          :reserved-word [50 50 50]
+          ;; editor color
+          :comment-documentation [0 0 0]
+          :comment-EOL [153 153 153]
+          :comment-multiline [0 0 0]
+          :data-type [0 0 0]
+          :error-char [0 0 0]
+          :error-id [0 0 0]
+          :error-num-format [0 0 0]
+          :error-string-double [0 0 0]
+          :function [0 153 0]
+          :identifier [0 0 0]
+          :literal-backquote [0 0 0]
+          :literal-boolean [0 0 0]
+          :literal-char [0 0 0]
+          :literal-number-decimal-int [0 0 0]
+          :literal-number-float [0 0 0]
+          :literal-number-hexadecimal [0 0 0]
+          :literal-string-double-quote [204 0 0]
+          :operator [0 0 153]
+          :preprocessor [0 0 0]
+          :reserved-word [0 153 0]
+          :separator [0 153 153]
+          :variable [0 0 0]
           }
          :editor 
          {:wrap? false
@@ -182,10 +204,9 @@
   (ssw-mig/mig-panel :constraints ["fillx" "" ""]
     :items 
     (concat [["ui" "span"]]
-;            (generate-color-options 
-;              ["background" "control"]
-;              ["text" "text"])
-            [["editor" "span"]]
+            (generate-color-options 
+              ["background" :background])
+            [["editor"] [(javax.swing.JSeparator.) "span"]]
             (generate-color-options
               ["Comment documentation" :comment-documentation]
               ["Comment EOL" :comment-EOL]

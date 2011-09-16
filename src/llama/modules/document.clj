@@ -293,6 +293,8 @@
                         "block outline" ConfigurableCaret/BLOCK_BORDER_STYLE))))
     (listen-to-option :color
       (fn [& _] (doto area .revalidate .repaint)))
+    (listen-to-option :color :background
+      (fn [_ [r g b]] (.setBackground area (java.awt.Color. r g b))))
     (ssw/listen area :mouse-moved 
                 (fn [_] (if (and (.isEditable area)
                                  (get-option :general :mouse-focus))
