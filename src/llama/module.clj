@@ -13,7 +13,7 @@
 
 (def active-modules 
   (atom ["ui" "core-menus" "editor" 
-         "project" ;"repl"
+         "project" "repl"
          ]))
 
 (defn get-modules []
