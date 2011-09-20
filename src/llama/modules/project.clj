@@ -53,25 +53,31 @@
       (.interrupt @a)
       (reset! a nil)))) ; not really needed, but more elegant
 
-(defn run-project-command [project]
-  (if-let [command (ssw/input "Enter command")]
-    (let [p (util/start-process command (:target-dir project))
-          output-area (javax.swing.JTextArea. (str "=>" command "\n"))
+(defn project-command-line [project]
+    (let [process (atom nil)
+          output-area (javax.swing.JTextArea.)
           input-area (javax.swing.JTextField.)
           dialog (ssw/dialog :content (ssw/border-panel :center (ssw/scrollable output-area) :south input-area)
-                             :size [500 :by 500]
-                             :success-fn (fn [& _] (.destroy (:process p))))]
+                             :size [500 :by 500])
+          init-process (fn [command]
+                         (let [p (util/start-process command (:target-dir project))]
+                           (reset! process p)
+                           (.start (Thread. #(do (.waitFor (:process p)) (reset! process nil))))
+                           (util/write-stream-to-text (:input-stream p) output-area)
+                           (util/write-stream-to-text (:error-stream p) output-area)
+                           (ssw/listen dialog :window-closing (fn [& _] (.destroy (:process p))))))]
       (.setEditable output-area false)
       (.addActionListener input-area
         (reify java.awt.event.ActionListener
           (actionPerformed [_ _]
-            (let [text (.getText input-area)]
-              (.write (:output-stream p) text)
-              (.append output-area text)))))
-      (util/write-stream-to-text (:input-stream p) output-area)
-      (util/write-stream-to-text (:error-stream p) output-area)
-      (ssw/listen dialog :window-closing (fn [& _] (.destroy (:process p))))
-      (ssw/show! dialog))))
+            (let [text (str (.getText input-area) "\n")]
+              (if @process
+                (do (.append output-area text)
+                    (.write (:output-stream @process) text))
+                (do (.append output-area (str "$ " text))
+                    (init-process text)))
+              (.setText input-area "")))))
+      (ssw/show! dialog)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; menu
@@ -111,8 +117,8 @@
                                                )))
          (ssw/menu :text "advanced"
                    :items 
-                   [(ssw/action :name "run command"
-                                :handler (fn [_] (run-project-command project)))
+                   [(ssw/action :name "command line"
+                                :handler (fn [_] (project-command-line project)))
                     :separator
                     (ssw/action :name "remove file" :enabled? (not (.isDirectory selected-file))
                                 :handler (fn [_]
