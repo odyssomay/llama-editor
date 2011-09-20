@@ -147,8 +147,10 @@
     (if (-> dialog ssw/pack! ssw/show!)
       (file (.getText dir) (.getText filename)))))
 
-(defn write-stream-to-text [stream text-area]
-  (let [jdoc (.getDocument text-area)
+(defn write-stream-to-text [stream area-or-doc]
+  (let [jdoc (if (isa? (class area-or-doc) javax.swing.text.Document)
+               area-or-doc
+               (.getDocument area-or-doc))
         text (atom "")]
     (.start (Thread. (fn []
                        (try
@@ -157,7 +159,8 @@
                            (when (not (.ready stream))
                              (ssw/invoke-now
                                (.insertString jdoc (.getLength jdoc) @text nil)
-                               (.setCaretPosition text-area (.getLength jdoc)))
+                               ;(.setCaretPosition text-area (.getLength jdoc))
+                               )
                              (reset! text ""))
                            (recur))
                          ; this means that the stream is closed
