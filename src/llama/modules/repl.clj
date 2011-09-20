@@ -31,8 +31,7 @@
       .flush)
     (merge process project)))
 
-(defn stop-repl [{:keys [process input-stream output-stream name] :as repl}]
-;  (.interrupt thread)
+(defn stop-repl [{:keys [process input-stream output-stream] :as repl}]
   (save-defined-state (str "repl-history-" (:name repl)))
   (.destroy process)
   (.close input-stream)
@@ -108,7 +107,7 @@
     (.removeAll input_panel)
     (.add input_panel (ssw/scrollable output_pane) java.awt.BorderLayout/CENTER)
     (.add input_panel input_field java.awt.BorderLayout/SOUTH)
-    (init-repl-text-fields repl output_pane error_pane)
+    (write-stream-to-text (:error-stream repl) error_pane)
     (ssw/listen output_pane :mouse-moved 
       (fn [_]
         (if (get-option :general :mouse-focus)
@@ -120,7 +119,7 @@
 (defn init-repl [obj]
   (let [project (:project obj)
         repl (if (:repl obj) (:repl obj)
-               (atom (start-repl project))) ;(llama.leiningen.repl/init-repl-server project 6000)
+               (atom (start-repl project)))
         jtext_pane (:text-pane (text-delegate {:type "clj" :model (:model obj)}))
         err_text (javax.swing.JTextArea.)
         input_panel (ssw/border-panel) 
@@ -159,9 +158,14 @@
 (def repls (atom []))
 
 (defn open-repl [tmodel project]
-  (let [tab {:project project
+  (let [repl (atom nil)
+        tab {:project project
              :model (text-model {:type "clj"})
-             :repl (atom (start-repl project))}]
+             :repl repl}]
+    (add-watch repl (gensym)
+      (fn [_ _ _ new-repl] 
+        (write-stream-to-text (:input-stream new-repl) (:model tab))))
+    (reset! repl (start-repl project))
     (swap! repls conj tab)))
 
 (defn close-project-repl [project]
@@ -171,10 +175,10 @@
   (let [tp (ssw/tabbed-panel :placement :right)
         tmodel (tab-model. tp repls)
         action-fn
-        (fn [& [id v]]
+        (fn [id & [v]]
           (case id
             :experiment (open-repl tmodel {:name "exp" ::anonymous true})
-            :open (open-repl tmodel v)))]
+            :open       (open-repl tmodel v)))]
     (let [listener (tab-listener tmodel (constantly false)
                      (fn [raw-tab]
                        (let [tab (init-repl raw-tab)]
